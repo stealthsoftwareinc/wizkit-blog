@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Replacing the SIEVE Intermediate Representation - Team Wizkit</title>
+    <link rel="stylesheet"
+        href="/wizkit-blog/assets/css/fonts.css" />
+    <link rel="stylesheet"
+        href="/wizkit-blog/assets/css/layout.css" />
+    <link rel="stylesheet"
+        href="/wizkit-blog/assets/css/content.css" />
+
+    <link rel="shortcut icon" type="image/png"
+        href="/wizkit-blog/assets/icons/tetra-solid-32x32.png" />
+
+    <link type="application/atom+xml" rel="alternate" href="https://stealthsoftwareinc.github.io/wizkit-blog/feed.xml" title="Team Wizkit" />
+    <!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Replacing the SIEVE Intermediate Representation | Team Wizkit</title>
+<meta name="generator" content="Jekyll v4.2.2" />
+<meta property="og:title" content="Replacing the SIEVE Intermediate Representation" />
+<meta name="author" content="Kimberlee Model" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="During most of 2021, the Wizkit team worked with other SIEVE Performers to develop and implement the SIEVE IR. Since it was finalized during summer 2021, we continued to push the envelope beyond what was demonstrated during the Phase I Testing Event. We&#8217;ve also been one of the most active voices, within the SIEVE program, critically analyzing this IR. In this blog post, we put the results of the critique to good use in making design suggestions for the next IR revision." />
+<meta property="og:description" content="During most of 2021, the Wizkit team worked with other SIEVE Performers to develop and implement the SIEVE IR. Since it was finalized during summer 2021, we continued to push the envelope beyond what was demonstrated during the Phase I Testing Event. We&#8217;ve also been one of the most active voices, within the SIEVE program, critically analyzing this IR. In this blog post, we put the results of the critique to good use in making design suggestions for the next IR revision." />
+<link rel="canonical" href="https://stealthsoftwareinc.github.io/wizkit-blog/2022/05/26/replacing-the-sieve-ir.html" />
+<meta property="og:url" content="https://stealthsoftwareinc.github.io/wizkit-blog/2022/05/26/replacing-the-sieve-ir.html" />
+<meta property="og:site_name" content="Team Wizkit" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2022-05-26T00:00:00-04:00" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="Replacing the SIEVE Intermediate Representation" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Kimberlee Model"},"dateModified":"2022-05-26T00:00:00-04:00","datePublished":"2022-05-26T00:00:00-04:00","description":"During most of 2021, the Wizkit team worked with other SIEVE Performers to develop and implement the SIEVE IR. Since it was finalized during summer 2021, we continued to push the envelope beyond what was demonstrated during the Phase I Testing Event. We&#8217;ve also been one of the most active voices, within the SIEVE program, critically analyzing this IR. In this blog post, we put the results of the critique to good use in making design suggestions for the next IR revision.","headline":"Replacing the SIEVE Intermediate Representation","mainEntityOfPage":{"@type":"WebPage","@id":"https://stealthsoftwareinc.github.io/wizkit-blog/2022/05/26/replacing-the-sieve-ir.html"},"url":"https://stealthsoftwareinc.github.io/wizkit-blog/2022/05/26/replacing-the-sieve-ir.html"}</script>
+<!-- End Jekyll SEO tag -->
+
+
+    <script>0</script>
+  </head>
+  <body>
+    <header>
+      <nav id="topNav">
+        <a href="#main" id="jumpMain">Jump to Main</a>
+        <a href="https://www.stealthsoftwareinc.com" id="logoImg">
+          <img
+            src="/wizkit-blog/assets/icons/tetra-solid-100x100.png"
+            alt="Stealth Software Technologies Home Page" /></a>
+        <a href="/wizkit-blog/" id="titleLink">Team Wizkit</a>
+        <span id="spacer">&nbsp;</span>
+        
+          
+            <a href="/wizkit-blog/"
+              
+              >about</a>
+          
+        
+          
+            <a href="/wizkit-blog/blog.html"
+              
+              >blog</a>
+          
+        
+      </nav>
+    </header>
+    <main id="main" tabindex="-1">
+  <article>
+  <h1> Replacing the SIEVE Intermediate Representation</h1>
+  <p>
+  <strong>Written:</strong>
+  <time datetime="2022-05-26 00:00:00 -0400">2022-05-26</time>,
+  
+    <strong>Published:</strong>
+    <time datetime="2022-10-12"> 2022-10-12</time>,
+  
+  <strong>Author:</strong> Kimberlee Model,
+  
+    <strong>Tags:</strong>
+    
+      <a href="/wizkit-blog/tag/sieve-ir
+">SIEVE IR</a>,
+    
+  
+</p>
+
+
+  <hr />
+  <div id="toc" class="toc">
+<div id="toctitle">Table of Contents</div>
+<ul class="sectlevel1">
+<li><a href="#the-layered-approach">The Layered Approach</a></li>
+<li><a href="#independent-functions">Independent Functions</a></li>
+<li><a href="#switching-between-multiple-fields">Switching between Multiple Fields</a></li>
+<li><a href="#encapsulated-datastructures">Encapsulated Datastructures</a></li>
+<li><a href="#pulling-it-back-together">Pulling it Back Together</a></li>
+</ul>
+</div>
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>During most of 2021, the Wizkit team worked with other SIEVE Performers to develop and implement the SIEVE IR.
+Since it was finalized during summer 2021, we continued to push the envelope beyond what was demonstrated during the Phase I Testing Event.
+We&#8217;ve also been one of the most active voices, within the SIEVE program, critically analyzing this IR.
+In this blog post, we put the results of the critique to good use in making design suggestions for the next IR revision.</p>
+</div>
+<div class="paragraph">
+<p>As we enter Phase II, Wizkit&#8217;s intention is to approach this round of IR development without much emphasis on maintaining backwards compatibility.
+In this redesign, our view is that the <em>biggest drawback</em> to rectify is the treatment of the IR as a clean hand-off from TA1 (the human-facing language) to TA2 (the ZK proof system).</p>
+</div>
+<div class="paragraph">
+<p>To really illustrate this point, essentially every TA2 backend in the SIEVE program has a format that they would prefer over the IR.
+Wizkit&#8217;s EMP backend prefers to encode its circuits in compiled C++, while our Virgo backend prefers to extract its own structuring from a non-uniform circuit, and yet other backends just want R1CS.
+Additionally, as TA2s gain functionality (such as batch/vector optimization, free disjunctions, or ZK RAM), the IR must match that functionality, leaving behind gaps where the program must shift resources around the moving IR.</p>
+</div>
+<div class="paragraph">
+<p>Similarly, the program has encountered a number of situations where prime-specificity in the IR has been an issue.
+First, across certain backends, sharing the same prime is not possible.
+Some backends (for example <a href="https://github.com/emp-toolkit/emp-zk">EMP&#8217;s QuickSilver</a>) require <a href="https://oeis.org/A000668">Mersenne Primes</a> while other backends (such as <a href="https://dl.acm.org/doi/pdf/10.1145/3372297.3417893">Ligero</a>) require <a href="https://oeis.org/A080076">Proth Primes</a> which enable FFTs.
+These sets are disjoint (aside from 3).</p>
+</div>
+<div class="paragraph">
+<p>To further complicate this, some circuits are specific to a prime.
+For example, the size and layout of a Fermat&#8217;s Little Theorem multiplexer depends on its prime due to its use of the fast exponent algorithm.
+Another prime specific circuit is the EC-DSA public key signature&#8201;&#8212;&#8201;its implementation requires the use of specific pair of primes.
+Yet other circuits, such as business logic, are largely agnostic to the prime so long as it is sufficiently large to avoid overflow.</p>
+</div>
+<div class="paragraph">
+<p>These complications over primes have become a concern of the IR within the SIEVE program.
+To resolve these issues, the program has discussed a number of solutions.
+A parameter negotiation could allow TA2 to indicate preferred primes to TA1.
+TA2 could be required to embed unsupported prime fields into supported ones.
+The IR could allow for unspecified primes or even ring ZK (e.g. mod 2<sup>n</sup>).
+As we add prime generalities to the IR, the boundary between TA1 and TA2 is further blurred into a gray-zone where both sets of expertise are necessary.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="the-layered-approach">The Layered Approach</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>With this in mind, our team encourages a two-layer approach to the IR.
+The top layer, or translation IR (also referred to as "IR2"), has the semantics of translating to the bottom layer.
+The bottom layer, or circuit abstraction, is a largely flat non-uniform circuit similar to IR-Simple or IR0 (at this point those two terms are largely interchangeable).
+The translation becomes a gray area where TA1 and TA2 must cooperate to produce either the circuit abstraction or a more suitable ZK format.
+We also acknowledge that the integrated front/back-end effort may opt to directly evaluate the translation IR.</p>
+</div>
+<div class="paragraph">
+<p>A benefit of the translation is that it can overcome naturally occuring incompatibilities such as prime mismatches.
+Say that TA1 calls for a prime that a given TA2 cannot support.
+In IR1, this was generally a show-stopper.
+However, for IR2, the translation is an ideal place to replace an arithmetic circuit with a multi-bit boolean circuit or to embed a prime in an alternate field, for example using <a href="https://ieeexplore.ieee.org/document/8418647">xJsnark</a>.
+The same could be done with RAM reductions, for TA2s that don&#8217;t natively support RAM.
+In this way, TA1 may remain involved even after their compiler has emitted valid IR, compensating for the IR&#8217;s movement into traditionally "TA1 territory", and gaining functionality in the process.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="independent-functions">Independent Functions</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Functions in IR1 were heavily dependent on both the size of the circuit and the circuit&#8217;s underlying field.
+In IR2, the program seeks to develop a standard library of common functionality which frontends can utilize and backends can optimize.
+Obviously, one cannot consider a library standard if it is heavily tied to attributes of a particular circuit.</p>
+</div>
+<div class="paragraph">
+<p>With this in mind, the translation IR needs to decouple from both fields/primes and circuit sizes.
+Rather than generating a new matrix multiplier for each matrix size and each field, a single function should handle all combinations of field and matrix size.
+In order for this to happen we need to reexamine the IR&#8217;s first-class datatypes.</p>
+</div>
+<div class="paragraph">
+<p>In IR1, the only first-class was a wire, the medium for propagating field elements.
+In IR2, we&#8217;ll need at least three first-classes:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Wires</p>
+</li>
+<li>
+<p>Fields</p>
+</li>
+<li>
+<p>Circuit size parameters such as publicly known lengths, arrays, and indices</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>These three types are the minimum required to implement <em>any</em> standard library functionality.
+In general, IR2&#8217;s core language should be the minimum feature set required to host its standard library.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="switching-between-multiple-fields">Switching between Multiple Fields</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>A particular functionality, which both TA2s are beginning to support and TA1s are eager to adopt, is field switching&#8201;&#8212;&#8201;the ability for a backend to convert wires from one field to another within a single circuit.
+Because field switching involves a single circuit mixing fields, this is a further reason to adopt a first-class field type.
+To go with this a new conversion gate must also be added to the IR&#8217;s core.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="encapsulated-datastructures">Encapsulated Datastructures</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The IR needs an aggregate type to enable to enable backends to implement and optimize their own datastructures.
+Essentially, this type must expose custom behaviors while encapsulating implementation and data.
+We&#8217;ve been calling this a <code>capsule</code> to distinguish from the object-oriented <code>class</code> terminology (although we&#8217;re still thinking about other potential names, like <code>abstraction</code> or <code>interface</code>).
+While this <code>capsule</code> type would be polymorphic much like an object-oriented <code>class</code>, there is a key distinction.
+A <code>capsule</code> is provided and overridden by the backend&#8201;&#8212;&#8201;the IR&#8217;s interpreter&#8201;&#8212;&#8201;whereas a <code>class</code> is overridden by subclasses in the same language.</p>
+</div>
+<div class="paragraph">
+<p>The first formative example we have for this is for ring ZK.
+The ring element is encapsulated by the <code>capsule</code>, hidden from the frontend.
+The frontend interacts only with the <code>capsule</code>'s behaviors: addition, multiplication, etc.
+The backends may provide alternative implementations or even replace with a native implementation.</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 50%;">
+<col style="width: 50%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-bottom">Multi-Bit Ring Implementation</th>
+<th class="tableblock halign-left valign-bottom">Large-Field Ring Implementation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-bottom"><div class="content"><div class="listingblock">
+<div class="content">
+<pre>capsule UInt32
+  private bool bits[32];
+
+
+  @method(add, /* ... */)
+    /* boolean adder */
+  @end
+  @method(mul, /* ... */)
+    /* boolean multiplier */
+  @end
+@end</pre>
+</div>
+</div></div></td>
+<td class="tableblock halign-left valign-bottom"><div class="content"><div class="listingblock">
+<div class="content">
+<pre>capsule UInt32
+  private BigField value;
+  public currWidth;
+
+  @method(add, /* ... */)
+    /* add, with occasional renormalize */
+  @end
+  @method(mul, /* ... */)
+    /* multiply, with occasional renormalize */
+  @end
+@end</pre>
+</div>
+</div></div></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>This pseudo code should illustrate the <code>capsule</code>, and how it may be polymorphized by the backend.
+It is not meant to to illustrate IR2 syntax details; those are yet to be determined.</p>
+</div>
+<div class="paragraph">
+<p>The second example we have is ZK RAM.
+In this case, the IR can implement a very naive RAM-like structure, and the backend may either override a native ZK RAM implementation, use a circuit-manipulating RAM reduction during translation, or fall back to the naive implementation.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>capsule RAM(Field Elt, Field Idx, public len)
+  private Elt buffer[len];
+
+  @method(get, @in: private Idx idx, @out: private Elt ret)
+    ret &lt;- Elt(0);
+    ctr &lt;- Idx(0);
+    @for e in this.buffer (@modifies ret, ctr)
+      ret += e * (ctr == idx);
+      ctr += 1;
+    @end
+  @end
+
+  @method(set, @in: private Idx idx, private Elt elt,
+       @modifies: buffer)
+    /* ... */
+  @end
+@end</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Again, the pseudocode is illustrative of the <code>capsule</code>'s naivety and the opportunity for backend optimization, rather than exact IR syntax.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="pulling-it-back-together">Pulling it Back Together</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Our team is excited to make right some of what we see as the IR&#8217;s shortcomings.
+We believe that pairing a translation IR with a circuit abstraction is the best solution to cover both varying ZK format preferences amongst TA2s and increased variety of new functionality amongst all TA2s.
+In developing the IR we want its core to be as minimal a feature set as possible, whilst enabling common functionality to be implemented in shared and standard libraries.</p>
+</div>
+<div class="sidebarblock">
+<div class="content">
+<div class="paragraph">
+<p>This research was developed with funding from the Defense Advanced Research Projects Agency (DARPA) under Contract No. HR001120C0087.
+The views, opinions, and/or findings expressed are those of the author(s) and should not be interpreted as representing the official views or policies of the Department of Defense or the U.S. Government.</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+  <hr />
+  
+    <nav id="similarContent">
+      <h2 class="eyebrow">Similar Content</h2>
+      <ul>
+      
+        
+          
+            
+              <li>
+                <a href="/wizkit-blog/tag/sieve-ir
+">
+                  Tag: SIEVE IR
+                </a>
+                <ul>
+                
+                  
+                
+                  
+                    <li><a href="/wizkit-blog/2021/11/01/sieve-ir-v1.0-retrospective.html">SIEVE IR v1.0 Retrospective</a></li>
+                  
+                
+                  
+                    <li><a href="/wizkit-blog/2021/09/20/introducing-the-sieve-ir.html">Introducing the SIEVE Intermediate Representation</a></li>
+                  
+                
+                </ul>
+              </li>
+            
+          
+        
+          
+        
+      
+      </ul>
+    </nav>
+    
+</article>
+
+</main>
+
+    <footer>
+      
+        <p id="distributionStatement">
+          <strong>Distribution Statement A:</strong> Approved for Public Release, Distribution Unlimited.
+        </p>
+      
+      <p>
+        Copyright &copy; 2022, Stealth Software Technologies, Inc.
+        All Rights Reserved.
+      </p>
+      
+        <p id="acknowledgement">
+          This research was developed with funding from the Defense Advanced Research Projects Agency (DARPA) under Contract No. HR001120C0087. The views, opinions, and/or findings expressed are those of the author(s) and should not be interpreted as representing the official views or policies of the Department of Defense or the U.S. Government.
+        </p>
+      
+
+      <a href="https://www.stealthsoftwareinc.com" id="bottomLogoImg">
+        <img
+          src="/wizkit-blog/assets/icons/tetra-solid-400x100.png"
+          alt="Stealth Software Technologies Home Page" /></a>
+
+      
+        <nav>
+          <strong>Navigation</strong>
+          
+            <br />
+            <a href="/wizkit-blog/">About</a>
+          
+            <br />
+            <a href="/wizkit-blog/blog.adoc">Blog</a>
+          
+            <br />
+            <a href="mailto:team-wizkit@stealthsoftwareinc.com">Contact</a>
+          
+        </nav>
+      
+    </footer>
+  </body>
+</html>
+

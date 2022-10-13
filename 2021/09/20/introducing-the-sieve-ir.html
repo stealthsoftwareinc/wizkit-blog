@@ -1,0 +1,838 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Introducing the SIEVE Intermediate Representation - Team Wizkit</title>
+    <link rel="stylesheet"
+        href="/wizkit-blog/assets/css/fonts.css" />
+    <link rel="stylesheet"
+        href="/wizkit-blog/assets/css/layout.css" />
+    <link rel="stylesheet"
+        href="/wizkit-blog/assets/css/content.css" />
+
+    <link rel="shortcut icon" type="image/png"
+        href="/wizkit-blog/assets/icons/tetra-solid-32x32.png" />
+
+    <link type="application/atom+xml" rel="alternate" href="https://stealthsoftwareinc.github.io/wizkit-blog/feed.xml" title="Team Wizkit" />
+    <!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Introducing the SIEVE Intermediate Representation | Team Wizkit</title>
+<meta name="generator" content="Jekyll v4.2.2" />
+<meta property="og:title" content="Introducing the SIEVE Intermediate Representation" />
+<meta name="author" content="Kimberlee Model" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="Recently the DARPA SIEVE Program released a 1.0.1 version of its primary program-wide deliverable, the SIEVE Intermediate Representation (IR). As one of the primary developers of the IR, team Wizkit will write a series of posts about the IR, what it got right, what it got wrong, and what we&#8217;d like to see in upcoming versions. But today we will start the series with this post as more of an impartial introduction to the SIEVE IR. It is our hope that this will ease you into using the SIEVE IR in your own work, and (most importantly) enable you to read further posts in this series." />
+<meta property="og:description" content="Recently the DARPA SIEVE Program released a 1.0.1 version of its primary program-wide deliverable, the SIEVE Intermediate Representation (IR). As one of the primary developers of the IR, team Wizkit will write a series of posts about the IR, what it got right, what it got wrong, and what we&#8217;d like to see in upcoming versions. But today we will start the series with this post as more of an impartial introduction to the SIEVE IR. It is our hope that this will ease you into using the SIEVE IR in your own work, and (most importantly) enable you to read further posts in this series." />
+<link rel="canonical" href="https://stealthsoftwareinc.github.io/wizkit-blog/2021/09/20/introducing-the-sieve-ir.html" />
+<meta property="og:url" content="https://stealthsoftwareinc.github.io/wizkit-blog/2021/09/20/introducing-the-sieve-ir.html" />
+<meta property="og:site_name" content="Team Wizkit" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2021-09-20T00:00:00-04:00" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="Introducing the SIEVE Intermediate Representation" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Kimberlee Model"},"dateModified":"2021-09-20T00:00:00-04:00","datePublished":"2021-09-20T00:00:00-04:00","description":"Recently the DARPA SIEVE Program released a 1.0.1 version of its primary program-wide deliverable, the SIEVE Intermediate Representation (IR). As one of the primary developers of the IR, team Wizkit will write a series of posts about the IR, what it got right, what it got wrong, and what we&#8217;d like to see in upcoming versions. But today we will start the series with this post as more of an impartial introduction to the SIEVE IR. It is our hope that this will ease you into using the SIEVE IR in your own work, and (most importantly) enable you to read further posts in this series.","headline":"Introducing the SIEVE Intermediate Representation","mainEntityOfPage":{"@type":"WebPage","@id":"https://stealthsoftwareinc.github.io/wizkit-blog/2021/09/20/introducing-the-sieve-ir.html"},"url":"https://stealthsoftwareinc.github.io/wizkit-blog/2021/09/20/introducing-the-sieve-ir.html"}</script>
+<!-- End Jekyll SEO tag -->
+
+
+    <script>0</script>
+  </head>
+  <body>
+    <header>
+      <nav id="topNav">
+        <a href="#main" id="jumpMain">Jump to Main</a>
+        <a href="https://www.stealthsoftwareinc.com" id="logoImg">
+          <img
+            src="/wizkit-blog/assets/icons/tetra-solid-100x100.png"
+            alt="Stealth Software Technologies Home Page" /></a>
+        <a href="/wizkit-blog/" id="titleLink">Team Wizkit</a>
+        <span id="spacer">&nbsp;</span>
+        
+          
+            <a href="/wizkit-blog/"
+              
+              >about</a>
+          
+        
+          
+            <a href="/wizkit-blog/blog.html"
+              
+              >blog</a>
+          
+        
+      </nav>
+    </header>
+    <main id="main" tabindex="-1">
+  <article>
+  <h1> Introducing the SIEVE Intermediate Representation</h1>
+  <p>
+  <strong>Written:</strong>
+  <time datetime="2021-09-20 00:00:00 -0400">2021-09-20</time>,
+  
+    <strong>Published:</strong>
+    <time datetime="2022-10-12"> 2022-10-12</time>,
+  
+  <strong>Author:</strong> Kimberlee Model,
+  
+    <strong>Tags:</strong>
+    
+      <a href="/wizkit-blog/tag/sieve-ir
+">SIEVE IR</a>,
+    
+  
+</p>
+
+
+  <hr />
+  <div id="toc" class="toc">
+<div id="toctitle">Table of Contents</div>
+<ul class="sectlevel1">
+<li><a href="#background">Background</a></li>
+<li><a href="#early-ir-development">Early IR Development</a></li>
+<li><a href="#a-streaming-modification">A "Streaming" Modification</a></li>
+<li><a href="#structuring-the-ir">Structuring the IR</a>
+<ul class="sectlevel2">
+<li><a href="#function-gates">Function Gates</a></li>
+<li><a href="#switch-case-statements">Switch Case Statements</a></li>
+<li><a href="#for-loops">For Loops</a></li>
+</ul>
+</li>
+<li><a href="#example-twos-complement-calculator">Example: Two&#8217;s Complement Calculator</a></li>
+<li><a href="#concluding-thoughts">Concluding thoughts</a></li>
+</ul>
+</div>
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>Recently the <a href="https://www.darpa.mil/program/securing-information-for-encrypted-verification-and-evaluation">DARPA SIEVE Program</a> released a 1.0.1 version of its primary program-wide deliverable, the <a href="https://github.com/sieve-zk/ir">SIEVE Intermediate Representation (IR)</a>.
+As one of the primary developers of the IR, team Wizkit will write a series of posts about the IR, what it got right, what it got wrong, and what we&#8217;d like to see in upcoming versions.
+But today we will start the series with this post as more of an impartial introduction to the SIEVE IR.
+It is our hope that this will ease you into using the SIEVE IR in your own work, and (most importantly) enable you to read further posts in this series.</p>
+</div>
+<div class="paragraph">
+<p>In writing this, we assume the reader has a cursory understanding of Zero-Knowledge Proofs (ZK).
+If you know who the "prover" and "verifier" are, and know what a "relation", "instance", and "witness" are, then you should be okay.
+An understanding of finite-field arithmetic in GF(<em>p</em>) and boolean arithmetic (equivalently, arithmetic in GF(2)) would also be helpful.</p>
+</div>
+<div class="paragraph">
+<p>To be just a bit more precise, we&#8217;re working in the following setting:  There are two parties, a "Prover" and a "Verifier".  The Prover wants to prove some statement to the Verifier "in zero knowledge"&#8201;&#8212;&#8201;that is, informally, without allowing the Verifier to learn anything other than that the statement is true.  As usual (and necessary) in the world of ZK, we assume that the statement to be proven amounts to a decision problem in the complexity class NP.  As such, the statement can be formulated as "<em>R</em>(<em>x</em>,<em>w</em>)", where <em>x</em> is some public "instance" known to both the Prover and the Verifier, <em>w</em> is a secret "witness" known only to the Prover, and <em>R</em> is a public boolean NP relation (or, equivalently, a witness relation for some NP language <em>L</em>).  The statement to be proven can be thought of as a statement "about" the instance <em>x</em> whose validity is "witnessed" by the witness <em>w</em>.</p>
+</div>
+<div class="paragraph">
+<p>Finally, it should be noted that the IR has two syntaxes: text and binary.
+In this post, we will describe the IR by reference to the text format.
+To learn more about the binary format see <a href="https://github.com/sieve-zk/ir/raw/main/v1.0.1/sieve-ir-v1.0.1.pdf">section 5 of the IR spec</a>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="background">Background</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>One of the mandates of the SIEVE Program is for performers to come up with a common Intermediate Representation, or "IR."
+The IR is a simplistic programming language for representing the NP statements to prove in ZK.
+It must be simple enough for ZK proof systems (which we will from here on out refer to as "ZK backends") to prove efficiently, but expressive enough as to not limit the frontend programming language that produces the statement.
+The SIEVE IR (we will use this interchangeably with just "IR" from now on) represents NP statements using boolean or arithmetic circuits with values contained in "wires".
+The reader should recall that boolean and arithmetic circuit satisfiability are NP-complete problems, and so any NP relation has such a representation.
+We use the terminology "short witness" to refer to the prover&#8217;s secret inputs to the circuit.
+We use the adjective "short" to contrast with a hypothetical "extended" witness which would consist of the values of <em>every</em> wire in a satisfying assignment of the circuit.
+Boolean circuits have 0 or 1 values and logical <code>AND</code>, <code>XOR</code>, and <code>NOT</code> gates.
+Arithmetic circuits have <a href="https://en.wikipedia.org/wiki/Finite_field">field element</a> values with addition and multiplication gates.
+The IR currently supports only fields GF(<em>p</em>) of prime field size <em>p</em>, that is, the integers modulo the prime <em>p</em>.</p>
+</div>
+<div class="paragraph">
+<p>At the beginning of the program, we debated the merits of different levels of expressivity, but settled on a very simple "list-of-gates" IR, with the understanding that we would build upwards from this.
+The stated goal of this early IR (which we colloquially refer to as "IR0") had feature parity to <a href="https://homes.esat.kuleuven.be/~nsmart/MPC/">Bristol Fashion</a>, but with a spin towards ZK and an eye towards extension.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="early-ir-development">Early IR Development</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Each wire of a circuit in IR0 was represented as an index to a global array of "wires", and each gate was listed in the relation as a function of its input wires assigned to its output wire.
+The first 0 through <code>n</code> wires were assigned by the instance and the next <code>n+1</code> through <code>n+m</code> were assigned by the short witness (for some appropriate <code>n</code> and <code>m</code>, of course).</p>
+</div>
+<div class="paragraph">
+<p>IR0 also had a short header listing certain aspects of the circuit:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>An IR version number</p>
+</li>
+<li>
+<p>Whether to use arithmetic or boolean gates</p>
+</li>
+<li>
+<p>A field description, consisting of</p>
+<div class="ulist">
+<ul>
+<li>
+<p>the characteristic <em>p</em> (for GF(<em>p</em>))</p>
+</li>
+<li>
+<p>a vestigial degree <em>n</em> (for GF(<em>p<sup>n</sup></em>)); however, this degree is currently fixed at 1, as we decided not to handle extension fields until a later phase.</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>The total number of wires in the circuit (including instance and short witness wires)</p>
+</li>
+<li>
+<p>The number of instance wires</p>
+</li>
+<li>
+<p>The number of short witness wires</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Additionally, IR0 existed as a combination of three "resources" (files).</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>The Instance resource listed assignments of values to wires 0 through <code>n</code>.</p>
+</li>
+<li>
+<p>The Short Witness resource assigns values to wires <code>n+1</code> through <code>n+m</code>.</p>
+</li>
+<li>
+<p>The Relation lists gates for assignments of the remaining wires in the circuit.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Each wire was assigned exactly once and had to be assigned a value before being used as a subsequent gate&#8217;s input.
+In other words, wires adhered to the following requirements: <a href="https://en.wikipedia.org/wiki/Static_single_assignment_form">"Single Static Assignment" (SSA)</a> and topological ordering.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="a-streaming-modification">A "Streaming" Modification</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Soon after this, we made modifications that enabled "streaming" proof systems in cases where the entirety of an NP statement may not be available at the beginning of the proof computation, or loading the entirety of it may exceed available memory.
+This is similar to piping <code>awk</code>, <code>grep</code>, and <code>sed</code> together for regular text manipulations.</p>
+</div>
+<div class="paragraph">
+<p>To support such an operating paradigm, we made three changes:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Did away with the circuit size declarations.</p>
+</li>
+<li>
+<p>Changed the instance and short witness to streams of values, rather than lists of assignments, where assignments are handled by "special" <code>@instance</code> and <code>@short_witness</code> directives in the relation.
+Each of these directives behaves like <code>C</code>'s <code>fgetc(stream)</code> for its stream, returning the next value, and advancing the stream by one.</p>
+</li>
+<li>
+<p>Added a special "delete" gate to indicate that certain wires are no longer needed and associated memory could be freed.
+Delete may be used with a single argument or with a first and last argument to indicate a range of wires.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>This core IR is still present, although newer features have necessitated additional changes to the IR header.
+Here is an example of an NP statement encoded in what is now referred to as "IR-Simple".
+Given two legs (as their lengths), this example proves the existence of a right triangle with those legs using Pythagoras&#8217;s theorem.</p>
+</div>
+<div class="listingblock">
+<div class="title">Relation</div>
+<div class="content">
+<pre>version 1.0.1;        // The latest IR version
+field                 // GF(p) as defined by
+  characteristic 127  // this prime number p
+  degree 1;           // and a vestigial degree (always 1)
+
+relation              // indicates that this resource is a relation
+gate_set: arithmetic; // Will use add/mul/addc/mulc instead of xor/and/not
+features: simple;     // Only features of this "simple"/"streaming" IR are used
+@begin                // The body of the relation
+  $0 &lt;- @instance;        // leg A
+  $3 &lt;- @mul($0, $0);     // A^2
+  $1 &lt;- @instance;        // leg B
+  $4 &lt;- @mul($1, $1);     // B^2
+  $2 &lt;- @short_witness;   // hypotenuse C
+  $5 &lt;- @mul($2, $2);     // C^2
+  @delete($0, $2);        // We have the squares, so we don't need A, B, and C
+  $6 &lt;- @add($3, $4);     // A^2 + B^2
+  // We want to prove that A^2 + B^2 == C^2, but we can't do equality directly
+  // Instead show that A^2 + B^2 - C^2 == 0.
+  $7 &lt;- @mulc($5, &lt;126&gt;); // Negate C^2 by multiplying by p-1
+  $8 &lt;- @add($6, $7);     // add it all up,
+  @assert_zero($8);       // and prove it is zero.
+@end</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>For the more visually oriented, the circuit would look like this.
+Also, if you don&#8217;t mind us tooting our own horns, check out our <a href="https://stealthsoftwareinc.github.io/wiztoolkit/docs/v1.0.1/tools/wtk-viz.html">wiztoolkit visualization tool</a>.</p>
+</div>
+<div class="paragraph">
+<p><span class="image"><img src="/wizkit-blog/attachments/ir1-intro/triangle.svg" alt="A graphical visualization of the prior triangle circuit. Each gate is a circle with its calculation and assignment" width="and each wire is an arrow connecting its assignment to its usage as an input wire"></span></p>
+</div>
+<div class="paragraph">
+<p>The instance and witness would appear as the following for a "3 4 5" triangle.</p>
+</div>
+<div class="listingblock">
+<div class="title">Instance</div>
+<div class="content">
+<pre>version 1.0.1;
+field characteristic 127 degree 1;
+instance @begin
+  &lt;3&gt;; // leg A
+  &lt;4&gt;; // leg B
+@end</pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">Short Witness</div>
+<div class="content">
+<pre>version 1.0.1;
+field characteristic 127 degree 1;
+short_witness @begin
+  &lt;5&gt;; // hypotenuse C
+@end</pre>
+</div>
+</div>
+<div id="executing-with-firealarm" class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Tip</div>
+</td>
+<td class="content">
+<div class="title">Executing the IR with FIREALARM</div>
+<div class="paragraph">
+<p>To run the IR absent of ZK&#8201;&#8212;&#8201;that is, to simply evaluate an circuit with inputs from an instance and short witness "in the clear," rather than proving satisfiability in zero knowledge&#8201;&#8212;&#8201;for development, debugging, and education purposes, Stealth has developed the <code>wtk-firealarm</code> tool as part of our <a href="https://stealthsoftwareinc.github.io/wiztoolkit/">WizToolKit library</a> (<a href="https://stealthsoftwareinc.github.io/wiztoolkit/docs/v1.0.1/install.html">installation instructions</a>).
+<code>wtk-firealarm</code> has a one-argument mode for checking that an IR resource is well formed and a three-argument mode for checking that an IR witnessed statement is well formed, i.e., that the instance and short witness do in fact satisfy the relation.</p>
+</div>
+<div class="paragraph">
+<p><code>wtk-firealarm</code> recognizes each IR resource by the following file suffixes.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>.rel</code> for the relation.</p>
+</li>
+<li>
+<p><code>.ins</code> for the instance.</p>
+</li>
+<li>
+<p><code>.wit</code> for the short witness.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>To give it a try, copy and paste the triangle example above into text files (with appropriate suffixes) and try invoking firealarm in both modes:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>&gt; wtk-firealarm circuit.rel
+&gt; wtk-firealarm circuit.rel public_inputs.ins prover_inputs.wit</pre>
+</div>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="structuring-the-ir">Structuring the IR</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Currently, the IR contains three features for adding program structure and control flow.
+This provides simplifying abstractions away from purely unstructured circuit formats such as Bristol Fashion.</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">Function Gates</dt>
+<dd>
+<p>Encapsulate a sub-circuit for reuse elsewhere in the relation.</p>
+</dd>
+<dt class="hdlist1">Switch Case Statements</dt>
+<dd>
+<p>Conditionally branch between assignments of alternative sub-circuits.</p>
+</dd>
+<dt class="hdlist1">For Loops</dt>
+<dd>
+<p>Repeat a single sub-circuit many times.</p>
+</dd>
+</dl>
+</div>
+<div class="paragraph">
+<p>Going into these features, understand that wires in SIEVE IR are <strong>not</strong> lexically scoped.
+The bodies (sub-circuits) of each structural element are as independent of each other as possible.
+Each sub-circuit defines its own wire-numbering space, each one starting back from zero.</p>
+</div>
+<div class="paragraph">
+<p>It is worth reiterating that each sub-circuit&#8217;s numbering space must maintain the SSA and topological ordering principles described earlier.</p>
+</div>
+<div class="sect2">
+<h3 id="function-gates">Function Gates</h3>
+<div class="paragraph">
+<p>Superficially, a function gate declares a sub-circuit.
+The sub-circuit can be "invoked" elsewhere, connecting wires from the caller to those of the function.
+An important consequence of this is that the internals of the function gate are isolated from the caller and locally scoped within the function.
+Because of this "connected isolation", the function gate is a building block for the other two features.</p>
+</div>
+<div class="paragraph">
+<p>A function gate is declared at the top of a relation.
+Its declaration adds nothing to the relation until it is invoked later.
+It has 5 identifying characteristics.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Name</p>
+</li>
+<li>
+<p>Number of Output wires</p>
+</li>
+<li>
+<p>Number of Input wires</p>
+</li>
+<li>
+<p>Number of Instance Consumptions</p>
+</li>
+<li>
+<p>Number of Short Witness Consumptions</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>The first three allow the sub-circuit to be referenced and connected into another circuit.
+The latter two define the side-effects to be expected after the circuit&#8217;s invocation, which will become important for switch cases.</p>
+</div>
+<div class="paragraph">
+<p>A mapping is used to connect wires from the calling scope into and out of the function&#8217;s scope.
+In the function&#8217;s scope, output wires are numbered sequentially from 0 through <em>number of outputs</em> - 1, and inputs from <em>number of outputs</em> through <em>number of outputs</em> + <em>number of inputs</em> - 1.
+At invocation, arguments are bound positionally.
+The caller lists each output and then each input, and in that order they are bound to <code>$0</code>, <code>$1</code>, <code>$2</code>&#8230;&#8203; in the callee&#8217;s scope.
+Here is an example that squares the last input, then sums it with the first three input wire values.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>@function(add4_sq_last, @out: 1, @in: 4, @instance: 0, @short_witness: 0)
+  // $0: single output wire
+  // $1, $2, $3, $4: input wires
+  // $5 and onwards: local wires
+  $5 &lt;- @add($1, $2);
+  $6 &lt;- @mul($4, $4);
+  $7 &lt;- @add($3, $6);
+  $0 &lt;- @add($5, $7);
+@end
+
+// output assigns to $10, inputs are connected to $6, $7, $2, and $3
+// $3 got squared
+$10 &lt;- @call(add4_sq_last, $6, $7, $2, $3);
+// now $7 got squared
+$11 &lt;- @call(add4_sq_last, $2, $3, $6, $7);
+
+// Sequential wires may be abbreviated to a range
+$12 &lt;- @call(add4_sq_last, $2 ... $5);
+// And ranges may be mixed with single elements in a list
+$13 &lt;- @call(add4_sq_last, $2 ... $4, $6);</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>An anonymous function invocation syntax is also available.
+This exists mainly to allow the appearance of nested loops and switch statements.
+Here is the same function body, now invoked as an inline function.
+Obviously, it doesn&#8217;t need a function name, but also the input and output wire counts are inferred.
+The example below illustrates this inference.
+The instance and short witness counts must still be declared in the anonymous function signature.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>$14 &lt;- @anon_call($10 ... $13, @instance: 0, @short_witness: 0)
+  // Caller-scoped wires $10 ... $13 are mapped to locally scoped wires $1 ... $4.
+  // Caller-scoped wire $14 is mapped to locally scoped wire $0.
+  // Wires &gt;= $5 are locally scoped.
+  $5 &lt;- @add($1, $2);
+  $6 &lt;- @mul($4, $4);
+  $7 &lt;- @add($3, $6);
+  $0 &lt;- @add($5, $7);
+@end</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>One last thing to note is that recursive function gates are prohibited.
+This is because a function gate is not a function; it emulates a circuit, not a processor, and thus there is no actual call stack.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="switch-case-statements">Switch Case Statements</h3>
+<div class="paragraph">
+<p>Switch statements allow a circuit to assign wires as the <em>results of a conditional branch</em>.
+Here is an example switch statement which either sums or multiplies some inputs. Neither case in this example has side effects.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>// The following switch statement chooses between output wire $0 from each case. The case is selected based on the value of $4.
+$5 &lt;- @switch($4)
+  @case &lt; 0 &gt;: @anon_call($0...$3, @instance: 0, @short_witness: 0)
+    // Calling scope $5 corresponds to local scope $0
+    // Calling scope $0 ... $3 corresponds to local scope $1 ... $4
+    // $5 and $6 are local
+    $5 &lt;- @add($1, $2);
+    $6 &lt;- @add($3, $4);
+    $0 &lt;- @add($5, $6);
+  @end
+  @case &lt; 1 &gt;: @anon_call($0...$3, @instance: 0, @short_witness: 0)
+    // Same scoping as above case.
+    $5 &lt;- @mul($1, $2);
+    $6 &lt;- @mul($3, $4);
+    $0 &lt;- @mul($5, $6);
+  @end
+@end</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Notice that, as with the for loops described below, the body of each case is a function gate.
+Each case&#8217;s function gate is missing its output wire list; instead, all cases share the output list of the entire switch.
+In the above example, cases share output wire $5 at the very top, which is a wire list of length one.</p>
+</div>
+<div class="paragraph">
+<p>In standard programming languages we are accustomed to conditional features skipping the evaluation of not-taken branches.
+This is not the case in the IR.
+Remember that one of our goals&#8201;&#8212;&#8201;in fact, the essence of ZK&#8201;&#8212;&#8201;is to reveal no more than just the statement&#8217;s validity; if two branches vary in length, then short-evaluating branches may leak some of the witness.
+Generally, this means that ZK backends must evaluate all branches, although some schemes can amortize this to the length of the longest branch.</p>
+</div>
+<div class="paragraph">
+<p>Obviously evaluating all branches is not ideal because side effects in non-selected branches could cause program failures and unexpected behavior.
+To reduce the burden on ZK frontends to keep track of such side effects (e.g., advancing streams, and causing proof failures), the IR semantics disable them in non-selected branches.
+If the IR did not alleviate this burden, then ZK frontends would need to account for the side effects of non-taken branches and manually undo them in their relations.</p>
+</div>
+<div class="paragraph">
+<p>Most IR directives (<code>@and</code>, <code>@xor</code>, <code>@mul</code>, etc, and even <code>@call</code>, etc.) don&#8217;t have side effects and have unchanged behavior within a non-selected branch.
+However, three directives will cause side-effects which last beyond a branch.
+The <code>@assert_zero</code> directive is the simplest effect to "cancel".
+All it does is cause the prover to conditionally reject a proof, so it&#8217;s possible to change the condition such that it is always acceptable to the verifier by multiplying its input wire by either 0 or 1.</p>
+</div>
+<div class="paragraph">
+<p>The <code>@instance</code> and <code>@short_witness</code> directives each consume a value from the instance or short witness (collectively input) streams.
+This effect is harder to cancel, because if each case consumes a different number of values, different evaluations would need differently sized input streams.
+Requiring differently sized streams reveals which case was taken, so this solution was rejected.
+The next solution was to require inputs to contain sufficiently many values that the sum of all cases' input consumptions can be used, but this padding may require many extra values and is quite non-intuitive.
+The solution we accepted is to require the switch to consume the maximum consumption of all cases, and repeat input values in each case.
+In unselected cases, this means it likely processes garbage values, but the affects of any garbage would be disabled by the switch.</p>
+</div>
+<div class="paragraph">
+<p>Here is an example of this in action, where we assume the instance and the short witness each assign three wire values.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>@switch($0)
+  @case &lt; 0 &gt;: @anon_call(@instance: 3, @short_witness: 1)
+    $1 &lt;- @instance;
+    $2 &lt;- @instance;
+    $3 &lt;- @instance;
+    $4 &lt;- @short_witness;
+    $5 &lt;- @add($1, $2);
+    $6 &lt;- @add($3, $4);
+    $0 &lt;- @add($5, $6);
+    @assert_zero($0);
+  @end
+    @case &lt; 1 &gt;: @anon_call(@instance: 1, @short_witness: 3)
+    $1 &lt;- @instance;
+    $2 &lt;- @short_witness;
+    $3 &lt;- @short_witness;
+    $4 &lt;- @short_witness;
+    $5 &lt;- @mul($1, $2);
+    $6 &lt;- @mul($3, $4);
+    $0 &lt;- @mul($5, $6);
+    @assert_zero($0);
+  @end
+@end</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>If the first case is taken, all instance values are "used", only one short witness value is "used", and the remaining short witness values are "discarded".
+If the second case is taken only one instance value is "used", all three short witness values are "used", and the remaining instance values are "discarded".
+However, in both cases the switch always consumes three instance values and three short witness values.</p>
+</div>
+<div class="paragraph">
+<p>In the first case, it then asserts that the inputs <em>sum</em> to zero, while the second checks that the <em>product</em> of a different set of inputs is zero.
+Assuming only one of these statements is true (and that the true one is the active branch), the <code>@assert_zero</code> in the non-active branch gets "disabled" by the ZK backend, for example, by multiplying by zero.
+The "active" <code>@assert_zero</code> must similarly be "enabled", by multiplying by one.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="for-loops">For Loops</h3>
+<div class="paragraph">
+<p>Now that we&#8217;ve understood function gates, a for loop is defined by a repetition of a function gate as its body over a prescribed range of repetitions.
+Here is an example that outputs the first 10 Fibonacci numbers.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>$0 &lt;- &lt;1&gt;;
+$1 &lt;- &lt;1&gt;;
+
+$2 ... $10 &lt;- @for i @first 2 @last 10
+  $i &lt;- @anon_call($(i - 1), $(i - 2), @instance: 0, @short_witness: 0)
+    $0 &lt;- @add($1, $2);
+  @end
+@end</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The above is equivalent to this sequence of function calls (although I did change from an anonymous to a named function, for succinctness):</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>@function(add_func, @out: 1, @in: 2, @instance: 0, @short_witness: 0)
+  $0 &lt;- @add($1, $2);
+@end
+
+$0 &lt;- &lt;1&gt;;
+$1 &lt;- &lt;2&gt;;
+$2 &lt;- @call(add_func, $0, $1);
+$3 &lt;- @call(add_func, $1, $2);
+$4 &lt;- @call(add_func, $2, $3);
+$5 &lt;- @call(add_func, $3, $4);
+$6 &lt;- @call(add_func, $4, $5);
+$7 &lt;- @call(add_func, $5, $6);
+$8 &lt;- @call(add_func, $6, $7);
+$9 &lt;- @call(add_func, $7, $8);
+$10 &lt;- @call(add_func, $8, $9);</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The loop itself assigns a list of output wires by repeating its body with an iterator (in the above example, <code>i</code>) that increments from a first to a last value.
+The loop&#8217;s function gate allows a special syntax for the input and output wires (but not for wires within an anonymous function&#8217;s body, nor for the loop&#8217;s bounds and consumptions).
+Namely, wire indices may be replaced by multiples and offsets of the loop&#8217;s iterator.
+If this were not the case, then the function would uselessly repeat the same calculation and illegally reassign the same output wire.</p>
+</div>
+<div class="paragraph">
+<p>The "iterator expression" syntax (for example, the input and output lists of the above for loop&#8217;s function) is used to express multiples and offsets of the iterator.
+It may be composed of numeric constants and any in-scope loop iterators.
+Allowed operations are addition (<code>+</code>), subtraction (<code>-</code>), multiplication (<code>*</code>) and division only by a constant (<code>/</code>).
+There is no operator precedence, and all sub-expressions must be parenthesized.
+For example, instead of writing <code>$(48 + i - j * 5)</code> you must use <code>$(48 + (i - (j * 5)))</code>.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+Although wires use "remap" scoping where they must be passed as function-gate arguments, loop iterators follow lexical scoping rules.
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="example-twos-complement-calculator">Example: Two&#8217;s Complement Calculator</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Here&#8217;s an example that encapsulates what we&#8217;ve covered in this post.
+See the inline comments for explanation.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>version 1.0.0;
+field characteristic 2 degree 1;
+relation
+gate_set: boolean;
+features: @function, @for, @switch;
+@begin
+  @function(bit_adder, @out: 2, @in: 3, @instance: 0, @short_witness: 0)
+    // $0 is sum
+    // $1 is carry out
+    // $2 is a
+    // $3 is b
+    // $4 is carry out
+
+    // This is a 1-bit adder.
+    $5 &lt;- @xor($2, $3);
+    $6 &lt;- @xor($2, $4);
+    $7 &lt;- @and($5, $6);
+    $1 &lt;- @xor($7, $2);
+    $0 &lt;- @xor($5, $4);
+  @end
+
+  // Lets fill the calculator ins/outs as follows
+  // $0 ... $31 will be the sum, Least-Significant-Bit (LSB) first, sign last
+
+  // $32 ... $63 input A, LSB-first, sign-last
+  $32 ... $63 &lt;- @for i @first 0 @last 31
+    $(32 + i) &lt;- @anon_call(@instance: 0, @short_witness: 1)
+      $0 &lt;- @short_witness;
+    @end
+  @end
+
+  // $64 ... $95 input B, LSB-first, sign-last
+  $64 ... $95 &lt;- @for i @first 0 @last 31
+    $(64 + i) &lt;- @anon_call(@instance: 0, @short_witness: 1)
+      $0 &lt;- @short_witness;
+    @end
+  @end
+
+  // $96 operation, 0 for add or 1 for subtract.
+  $96 &lt;- @short_witness;
+
+  // $97 ... $28 are the adjusted input B
+  $97 ... $128 &lt;- @switch($96)
+    @case &lt;0&gt;: @anon_call($64 ... $95, @instance: 0, @short_witness: 0)
+      // addition, don't adjust.
+      // $0 ... is the case's output mapping
+      // $32 ... is the case's input mapping
+      $0 ... $31 &lt;- @for i @first 0 @last 31
+        $i &lt;- @anon_call($(i + 32), @instance: 0, @short_witness: 0)
+          $0 &lt;- $1;
+        @end
+      @end
+    @end
+    @case &lt;1&gt;: @anon_call($64 ... $95, @instance: 0, @short_witness: 0)
+     // subtraction, adjust by negating bits.
+      // $0 ... is the case's output mapping
+      // $32 ... is the case's input mapping
+      $0 ... $31 &lt;- @for i @first 0 @last 31
+        $i &lt;- @anon_call($(i + 32), @instance: 0, @short_witness: 0)
+          // don't adjust for addition.
+          $0 &lt;- @not($1);
+        @end
+      @end
+    @end
+  @end
+
+  // Lets add it up now.
+  // $129 ... $160 can be carry bits.
+
+  // Carry in the operation (0=add, 1=sub) to finish the compliment.
+  $0, $129 &lt;- @call(bit_adder, $32, $97, $96);
+
+  $1 ... $31, $130 ... $160 &lt;- @for i @first 1 @last 31
+    $i, $(129 + i) &lt;- @call(bit_adder, $(32 + i), $(97 + i), $(128 + i));
+  @end
+
+  // clean up the extra wires for adjusting and carry bits.
+  @delete($97, $128);
+  @delete($129, $159);
+
+  // And finally lets just assert that there was no overflow.
+  // (invert the overflow bit during subtraction)
+  $161 &lt;- @xor($160, $96);
+  @assert_zero($161);
+
+  // And assert that the sum is as expected by the instance.
+  @for i @first 0 @last 31
+    @anon_call($i, @instance: 1, @short_witness: 0)
+      // $0: bit in sum
+      $1 &lt;- @instance;
+      $2 &lt;- @xor($0, $1);
+      @assert_zero($2);
+    @end
+  @end
+@end</pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="concluding-thoughts">Concluding thoughts</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>We hope this introduction has given our readers an insight into the thought process and the mechanics of the SIEVE IR&#8217;s most recent revision.
+In upcoming posts we will take a look at some of what we like and dislike about this revision of the IR, to be concluded with our goals for and some of the mechanics we would like to see in the next revision.</p>
+</div>
+<div class="sidebarblock">
+<div class="content">
+<div class="paragraph">
+<p>This research was developed with funding from the Defense Advanced Research Projects Agency (DARPA) under Contract No. HR001120C0087.
+The views, opinions, and/or findings expressed are those of the author(s) and should not be interpreted as representing the official views or policies of the Department of Defense or the U.S. Government.</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+  <hr />
+  
+    <nav id="similarContent">
+      <h2 class="eyebrow">Similar Content</h2>
+      <ul>
+      
+        
+          
+            
+              <li>
+                <a href="/wizkit-blog/tag/sieve-ir
+">
+                  Tag: SIEVE IR
+                </a>
+                <ul>
+                
+                  
+                    <li><a href="/wizkit-blog/2022/05/26/replacing-the-sieve-ir.html">Replacing the SIEVE Intermediate Representation</a></li>
+                  
+                
+                  
+                    <li><a href="/wizkit-blog/2021/11/01/sieve-ir-v1.0-retrospective.html">SIEVE IR v1.0 Retrospective</a></li>
+                  
+                
+                  
+                
+                </ul>
+              </li>
+            
+          
+        
+          
+        
+      
+      </ul>
+    </nav>
+    
+</article>
+
+</main>
+
+    <footer>
+      
+        <p id="distributionStatement">
+          <strong>Distribution Statement A:</strong> Approved for Public Release, Distribution Unlimited.
+        </p>
+      
+      <p>
+        Copyright &copy; 2021, Stealth Software Technologies, Inc.
+        All Rights Reserved.
+      </p>
+      
+        <p id="acknowledgement">
+          This research was developed with funding from the Defense Advanced Research Projects Agency (DARPA) under Contract No. HR001120C0087. The views, opinions, and/or findings expressed are those of the author(s) and should not be interpreted as representing the official views or policies of the Department of Defense or the U.S. Government.
+        </p>
+      
+
+      <a href="https://www.stealthsoftwareinc.com" id="bottomLogoImg">
+        <img
+          src="/wizkit-blog/assets/icons/tetra-solid-400x100.png"
+          alt="Stealth Software Technologies Home Page" /></a>
+
+      
+        <nav>
+          <strong>Navigation</strong>
+          
+            <br />
+            <a href="/wizkit-blog/">About</a>
+          
+            <br />
+            <a href="/wizkit-blog/blog.adoc">Blog</a>
+          
+            <br />
+            <a href="mailto:team-wizkit@stealthsoftwareinc.com">Contact</a>
+          
+        </nav>
+      
+    </footer>
+  </body>
+</html>
+

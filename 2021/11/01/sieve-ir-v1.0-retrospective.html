@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>SIEVE IR v1.0 Retrospective - Team Wizkit</title>
+    <link rel="stylesheet"
+        href="/wizkit-blog/assets/css/fonts.css" />
+    <link rel="stylesheet"
+        href="/wizkit-blog/assets/css/layout.css" />
+    <link rel="stylesheet"
+        href="/wizkit-blog/assets/css/content.css" />
+
+    <link rel="shortcut icon" type="image/png"
+        href="/wizkit-blog/assets/icons/tetra-solid-32x32.png" />
+
+    <link type="application/atom+xml" rel="alternate" href="https://stealthsoftwareinc.github.io/wizkit-blog/feed.xml" title="Team Wizkit" />
+    <!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>SIEVE IR v1.0 Retrospective | Team Wizkit</title>
+<meta name="generator" content="Jekyll v4.2.2" />
+<meta property="og:title" content="SIEVE IR v1.0 Retrospective" />
+<meta name="author" content="Kimberlee Model" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="In our previous post we took a first look at the SIEVE IR, presenting it as impartially as possible. Today we will take a more &quot;opinionated&quot; or normative look at the IR. On the one hand, we are very proud of this accomplishment&#8201;&#8212;&#8201;(to our knowledge) the first widely implemented circuit representation for ZK. However, we&#8217;d also like to acknowledge that the IR has its flaws and highlight where we think there is room for improvement." />
+<meta property="og:description" content="In our previous post we took a first look at the SIEVE IR, presenting it as impartially as possible. Today we will take a more &quot;opinionated&quot; or normative look at the IR. On the one hand, we are very proud of this accomplishment&#8201;&#8212;&#8201;(to our knowledge) the first widely implemented circuit representation for ZK. However, we&#8217;d also like to acknowledge that the IR has its flaws and highlight where we think there is room for improvement." />
+<link rel="canonical" href="https://stealthsoftwareinc.github.io/wizkit-blog/2021/11/01/sieve-ir-v1.0-retrospective.html" />
+<meta property="og:url" content="https://stealthsoftwareinc.github.io/wizkit-blog/2021/11/01/sieve-ir-v1.0-retrospective.html" />
+<meta property="og:site_name" content="Team Wizkit" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2021-11-01T00:00:00-04:00" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="SIEVE IR v1.0 Retrospective" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Kimberlee Model"},"dateModified":"2021-11-01T00:00:00-04:00","datePublished":"2021-11-01T00:00:00-04:00","description":"In our previous post we took a first look at the SIEVE IR, presenting it as impartially as possible. Today we will take a more &quot;opinionated&quot; or normative look at the IR. On the one hand, we are very proud of this accomplishment&#8201;&#8212;&#8201;(to our knowledge) the first widely implemented circuit representation for ZK. However, we&#8217;d also like to acknowledge that the IR has its flaws and highlight where we think there is room for improvement.","headline":"SIEVE IR v1.0 Retrospective","mainEntityOfPage":{"@type":"WebPage","@id":"https://stealthsoftwareinc.github.io/wizkit-blog/2021/11/01/sieve-ir-v1.0-retrospective.html"},"url":"https://stealthsoftwareinc.github.io/wizkit-blog/2021/11/01/sieve-ir-v1.0-retrospective.html"}</script>
+<!-- End Jekyll SEO tag -->
+
+
+    <script>0</script>
+  </head>
+  <body>
+    <header>
+      <nav id="topNav">
+        <a href="#main" id="jumpMain">Jump to Main</a>
+        <a href="https://www.stealthsoftwareinc.com" id="logoImg">
+          <img
+            src="/wizkit-blog/assets/icons/tetra-solid-100x100.png"
+            alt="Stealth Software Technologies Home Page" /></a>
+        <a href="/wizkit-blog/" id="titleLink">Team Wizkit</a>
+        <span id="spacer">&nbsp;</span>
+        
+          
+            <a href="/wizkit-blog/"
+              
+              >about</a>
+          
+        
+          
+            <a href="/wizkit-blog/blog.html"
+              
+              >blog</a>
+          
+        
+      </nav>
+    </header>
+    <main id="main" tabindex="-1">
+  <article>
+  <h1> SIEVE IR v1.0 Retrospective</h1>
+  <p>
+  <strong>Written:</strong>
+  <time datetime="2021-11-01 00:00:00 -0400">2021-11-01</time>,
+  
+    <strong>Published:</strong>
+    <time datetime="2022-10-12"> 2022-10-12</time>,
+  
+  <strong>Author:</strong> Kimberlee Model,
+  
+    <strong>Tags:</strong>
+    
+      <a href="/wizkit-blog/tag/sieve-ir
+">SIEVE IR</a>,
+    
+      <a href="/wizkit-blog/tag/retrospective
+">Retrospective</a>,
+    
+  
+</p>
+
+
+  <hr />
+  <div id="toc" class="toc">
+<div id="toctitle">Table of Contents</div>
+<ul class="sectlevel1">
+<li><a href="#what-did-we-get-right">What Did We Get Right?</a></li>
+<li><a href="#where-can-we-improve">Where can we Improve?</a>
+<ul class="sectlevel2">
+<li><a href="#large-discontinuities-in-wire-numbers">Large Discontinuities in Wire Numbers</a></li>
+<li><a href="#consecutive-discontiguities">Consecutive Discontiguities</a></li>
+</ul>
+</li>
+<li><a href="#what-else-is-missing">What Else is Missing?</a></li>
+<li><a href="#conclusions">Conclusions</a></li>
+</ul>
+</div>
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>In our previous post we took a first look at the SIEVE IR, presenting it as impartially as possible.
+Today we will take a more "opinionated" or normative look at the IR.
+On the one hand, we are very proud of this accomplishment&#8201;&#8212;&#8201;(to our knowledge) the first widely implemented circuit representation for ZK.
+However, we&#8217;d also like to acknowledge that the IR has its flaws and highlight where we think there is room for improvement.</p>
+</div>
+<div class="paragraph">
+<p>If you understood the previous <a href="/2021/09/20/introducing-the-sieve-ir.adoc">introduction post</a>, then you should be in a good position to read this one too.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="what-did-we-get-right">What Did We Get Right?</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Looking at the goals we set out for the IR, here&#8217;s where we think it is a success.</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">Backend Interoperability</dt>
+<dd>
+<p>The IR is successfully integrated with every ZK backend in the SIEVE program.
+This means that so long as two backends can share the same prime, they can prove the same witnessed statement.
+The T&amp;E Team was even able to use the SIEVE profile of zkInterface to convert from the IR to R1CS and use <a href="https://github.com/scipr-lab/libsnark"><code>libsnark</code></a> as a testing baseline.</p>
+</dd>
+<dt class="hdlist1">Succinct Relations</dt>
+<dd>
+<p>The IR enables a relatively short relation to expand into a far "longer" (at least in gate count) proof.
+This means that a given relation in the IR may be far shorter than its equivalent in, say, Bristol Fashion or R1CS.</p>
+</dd>
+<dt class="hdlist1">Interoperable Text and Binary</dt>
+<dd>
+<p>This is sort of an odd-ball feature of the IR, but from the start we realized that an IR has two potentially conflicting goals:
+On the one hand, it must enable developers to reason about and debug their work, as well as to educate their peers and students.
+However, it must also be performant enough for large-scale systems.
+Thus, rather than scarifice either of these goals in service of the other, we came up with a text format for humans (as well as computers) to read, and a binary format that computers can ingest on the fly if desired.</p>
+</dd>
+</dl>
+</div>
+<div class="paragraph">
+<p>To illustrate some of these advantages, we&#8217;ll introduce the matrix-multiplication circuit that we&#8217;ve used extensively for testing.
+The circuit is given three matrices <em>A</em>, <em>B</em>, and <em>C</em> over some finite field <em>GF(p)</em> of prime order <em>p</em>.
+<em>A</em> and <em>C</em> are of the instance (visible to the verifier), while <em>B</em> is from the witness (a secret of the prover).
+The circuit computes <em>C' := A * B</em> and proves that <em>C == C'</em>.</p>
+</div>
+<div class="paragraph">
+<p>The circuit is generated by a <a href="https://github.com/stealthsoftwareinc/wiztoolkit/blob/v1.0.1/src/main/python/matrix_prod.py">Python script</a>.
+It is parameterized by the matrix size, the prime <em>p</em>, and the choice of whether to generate a non-uniform/flat circuit ("IR0") or to use loops for shrinking the circuit&#8217;s size ("IR1").
+The on-disk size of the IR0 circuit is cubic in the size of the matrix, whilst that of IR1 is nearly constant.</p>
+</div>
+<div class="paragraph">
+<p>During the Phase I testing event, every TA2 backend of the SIEVE program was able to prove satisfiability of the matrix-multiplication circuit under one or more primes.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="where-can-we-improve">Where can we Improve?</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Early in the program the IR started out as largely a ZK-friendly analog to Bristol Fashion (with an arithmetic profile), and at that time the decision was made that all wires in a circuit would be numbered.
+This numbering system made sense when there was a single scope with many, many wires in it.
+However, we&#8217;ve since extended to nested scopes with repetition and branching, and the numbering system is starting to push its limits.</p>
+</div>
+<div class="paragraph">
+<p>At this point the largest issue is that the wire-numbering system cannot express memory boundaries, and even if it could, it cannot enforce them.
+Due to the numbering system and its extensions, long discontinuities may arise between wire numbers, and consecutively numbered wires might refer to discontiguous space.</p>
+</div>
+<div class="sect2">
+<h3 id="large-discontinuities-in-wire-numbers">Large Discontinuities in Wire Numbers</h3>
+<div class="paragraph">
+<p>The IR defines wire numbers as being in the range of 0 through 2<sup>64</sup>-1.
+Most of the time a frontend will generate them consecutively starting at 0, but this is not required.
+This means that one could generate a circuit without consecutive wire numbering, and the ZK backend must deal with it.
+The example here is the <a href="/wizkit-blog/2021/09/20/introducing-the-sieve-ir.html#a-streaming-modification">triangle example</a> that&#8217;s been used in a few places; however, we&#8217;ve replaced some of the wires with random numbers between 0 and 2<sup>64</sup>-1.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>version 1.0.0;
+field characteristic 127 degree 1;
+relation
+gate_set: arithmetic;
+features: simple;
+@begin
+  $9596288231981551893 &lt;- @instance;
+  $3 &lt;- @mul($9596288231981551893, $9596288231981551893);
+  $1 &lt;- @instance;
+  $86792020199 &lt;- @mul($1, $1);
+  $11117553 &lt;- @short_witness;
+  $12294742782356752208 &lt;- @mul($11117553, $11117553);
+  $6 &lt;- @add($3, $86792020199);
+  $7 &lt;- @mulc($12294742782356752208, &lt;126&gt;);
+  $8 &lt;- @add($6, $7);
+  @assert_zero($8);
+@end</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This is admittedly a bit of an absurd example.
+But here&#8217;s a more plausible example, which we actually had to deal with in practice.</p>
+</div>
+<div class="paragraph">
+<p>In the integration of the Wizkit team&#8217;s <a href="https://dl.acm.org/doi/pdf/10.1145/3372297.3417893">Ligero ZK</a> backend with the IR, we used a resizeable array data structure to track wire numbering in a single pass, with the assumption that the all used wires would eventually be "close enough" to consecutive that it would work out to be most efficient.
+Looking at all of our test cases, this seemed like a safe assumption.
+However, we later decided that since the backend couldn&#8217;t do much with a switch statement, we would convert all switches to multiplexer circuits (as suggested in Section 6.3 of the <a href="https://github.com/sieve-zk/ir/raw/main/v1.0.1/sieve-ir-v1.0.1.pdf">IR specification</a>) before feeding the IR into this backend.</p>
+</div>
+<div class="paragraph">
+<p>In our own testing the assumption of "nearly consecutive numbering starting near zero" broke down.
+This is because the IR specification reserves high-order wire numbers (between 2<sup>63</sup> and 2<sup>64</sup>-1) for IR transformations&#8201;&#8212;&#8201;such as the multiplexer we chose.
+When combining our multiplexer transformation with the Ligero ZK backend, our system attempted to resize the array to more than 2<sup>63</sup> elements, more space than most virtual memory systems can practically address (even in 64-bit processors).
+To illustrate:</p>
+</div>
+<details>
+<summary class="title">Here is a small example switch-case statement &#8230;&#8203;</summary>
+<div class="content">
+<div class="listingblock">
+<div class="content">
+<pre>@begin
+  $0 &lt;- @short_witness;
+  $1 &lt;- @instance;
+  $2 &lt;- @short_witness;
+  $3 &lt;- @instance;
+  $4 &lt;- @short_witness;
+
+  $5 &lt;- @switch($4)
+    @case &lt; 0 &gt;: @anon_call($0...$3, @instance: 0, @short_witness: 0)
+      $5 &lt;- @add($1, $2);
+      $6 &lt;- @add($3, $4);
+      $0 &lt;- @add($5, $6);
+    @end
+    @case &lt; 1 &gt;: @anon_call($0...$3, @instance: 0, @short_witness: 0)
+      $5 &lt;- @mul($1, $2);
+      $6 &lt;- @mul($3, $4);
+      $0 &lt;- @mul($5, $6);
+    @end
+  @end
+  @assert_zero($5);
+@end</pre>
+</div>
+</div>
+</div>
+</details>
+<details>
+<summary class="title">and its automated conversion to a multiplexer.</summary>
+<div class="content">
+<div class="listingblock">
+<div class="content">
+<pre>@begin
+  @function(wtk::mux::check_case, @out:1,@in:2,@instance:0,@short_witness:0)
+    $3&lt;-@add($1,$2);
+    $4&lt;-@mul($3,$3);
+    $5&lt;-@mul($4,$3);
+    $6&lt;-@mul($5,$5);
+    $7&lt;-@mul($6,$6);
+    $8&lt;-@mul($7,$7);
+    $9&lt;-@mul($8,$8);
+    $10&lt;-@mul($9,$9);
+    $11&lt;-@mulc($10,&lt;96&gt;);
+    $0&lt;-@addc($11,&lt;1&gt;);
+  @end
+  $0&lt;-@short_witness;
+  $1&lt;-@instance;
+  $2&lt;-@short_witness;
+  $3&lt;-@instance;
+  $4&lt;-@short_witness;
+  $9223372036854775808&lt;-&lt;0&gt;;
+  $9223372036854775809&lt;-&lt;96&gt;;
+  $9223372036854775810...$9223372036854775811&lt;-@for wtk::mux::i @first 0 @last 1
+    $(9223372036854775810 + wtk::mux::i)&lt;-@call(wtk::mux::check_case,$(9223372036854775808 + wtk::mux::i),$4);
+  @end
+  // original case &lt; 0 &gt;
+  $9223372036854775812&lt;-@anon_call($0...$3,$9223372036854775810,@instance:0,@short_witness:0)
+    $6&lt;-@add($1,$2);
+    $7&lt;-@add($3,$4);
+    $0&lt;-@add($6,$7);
+  @end
+  // original case &lt; 1 &gt;
+  $9223372036854775813&lt;-@anon_call($0...$3,$9223372036854775811,@instance:0,@short_witness:0)
+    $6&lt;-@mul($1,$2);
+    $7&lt;-@mul($3,$4);
+    $0&lt;-@mul($6,$7);
+  @end
+  $9223372036854775814&lt;-@add($9223372036854775810,$9223372036854775811);
+  $9223372036854775815&lt;-@addc($9223372036854775814,&lt;96&gt;);
+  @assert_zero($9223372036854775815);
+  $9223372036854775816&lt;-@mul($9223372036854775812,$9223372036854775810);
+  $9223372036854775817&lt;-@mul($9223372036854775813,$9223372036854775811);
+  $5&lt;-@add($9223372036854775816,$9223372036854775817);
+  @assert_zero($5);
+@end</pre>
+</div>
+</div>
+</div>
+</details>
+<div class="paragraph">
+<p>At the time, our "quick solution" was for the multiplex converter to begin the high-order numbering from a much smaller constant (say 10<sup>5</sup>).
+This worked out alright because the testing circuits grew in iterations of a switch rather than the size of each case.</p>
+</div>
+<div class="paragraph">
+<p>Another solution that we considered was to split into two resizeable arrays&#8201;&#8212;&#8201;one to be zero-indexed and another to be 2<sup>63</sup>-indexed.
+This approach would handle this particular split, but not all conceivable splits.
+Coming from another direction, the IR specification uses a <code>Map</code> datatype, which does cover all conceivable splits at a significant performance overhead.</p>
+</div>
+<div class="paragraph">
+<p>The final solution which we came to was a table of heuristically sized ranges (a "lookup table").
+The ranges are ordered for binary search, then a particular wire within the range may be array-indexed.
+This comes with the drawback of high code complexity, as range overlaps must be avoided.
+However, compared to <code>std::unordered_map</code>, this comes with about a 1.4x speedup for IR-Simple, and we&#8217;ve measured up to a 6x speedup when using IR loops.</p>
+</div>
+<div class="paragraph">
+<p>While we can take pride in overcoming issues with large-discontinuities, we would prefer to avoid this entirely.
+Changes to the IR could enable TA1 to encode prior knowledge of an ideal memory layout for TA2 to pick up.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="consecutive-discontiguities">Consecutive Discontiguities</h3>
+<div class="paragraph">
+<p>"Consecutive Discontiguities" are a strange phenomenon we&#8217;ve seen in testing the IR where consecutively numbered wires exist in discontiguous, or non-adjacent, memory locations.
+They tend to arise mainly in remapping wires from an outer scope to an inner or function scope:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>When elements of an invocation&#8217;s input or output list are non-consecutive or are themselves consecutive discontiguities.</p>
+</li>
+<li>
+<p>At the boundary between the output and input range.</p>
+</li>
+<li>
+<p>At the boundary between the input and local range.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Here is an example function (an arithmetic multiplexer, to be specific).</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>@function(a_mux,
+    @out: 1, @in: 8, /* ... */)
+  // $0: output
+  // $1 ... $4: data input wires
+  // $5 ... $8: selector input wires
+  $9 &lt;- @mul($1, $5);
+  $10 ... $12 &lt;- @for i @first 2 @last 4
+    $(9+i) &lt;- @anon_call(
+         $i, $(5+i), $(8+i), /* ... */)
+      $4 &lt;- @mul($1, $2);
+      $0 &lt;- @add($3, $4);
+    @end
+  @end
+  $0 &lt;- $12;
+@end</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>In its first invocation, all remaps are contiguous, so the only discontiguity is between the input and local ranges.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>/* Assume $4 ... $11 are assigned */
+$3 &lt;- @call(a_mux, $4 ... $11);</pre>
+</div>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="/wizkit-blog/attachments/retrospective/lookup_table_desired.png" alt="lookup table desired">
+</div>
+<div class="title">Figure 1. The first invocation&#8217;s lookup table has a single range for each of the outputs, inputs, and local wires.</div>
+</div>
+<div class="paragraph">
+<p>In the second invocation, there are consecutive discontiguities within and around the input and output ranges.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>/* Assume $0 ... $20 are assigned */
+$22 &lt;- @call(a_mux, $0 ... $2, $9, $5 ... $6, $15, $20)</pre>
+</div>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="/wizkit-blog/attachments/retrospective/lookup_table_discontiguities.png" alt="lookup table discontiguities">
+</div>
+<div class="title">Figure 2. The second invocation&#8217;s lookup-table has many ranges remapped from the outer scope, in addition to the local wires.</div>
+</div>
+<div class="paragraph">
+<p>The net effect is that more time is spent remapping small ranges into the lookup table, and that there is a lot of pollution in the table.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="what-else-is-missing">What Else is Missing?</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>In addition to the deficiencies in the wire-numbering system, we believe the following somewhat obvious features should be added to the IR.</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">Size-Parameterized Function Gates</dt>
+<dd>
+<p>At the moment a function gate must have a fixed number of input and output wires.
+As a simple example, consider a function gate that sums all its input wires.
+To sum 4 wires, 5 wires, or 6 wires one would need different function gates, even though it seems like an obvious enough task for a single function gate to handle.</p>
+</dd>
+<dt class="hdlist1">Switch Default Case</dt>
+<dd>
+<p>The IR does not allow for programmable behavior if no case is matched within a switch statement.
+Switches are the only element of the IR that allow for input-dependent control flow; loops and function gates have fixed size, and recursion is strictly forbidden.
+It makes sense that they be as flexible as possible.</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="conclusions">Conclusions</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>In an early iteration of this article, the conclusion was that many of the criticisms I came up with would be moot if we implemented a two-pass interpreter for the IR.
+Memory boundaries could then be reconstructed and used to improve performance.
+Well, as I finish writing this update, said two-pass interpreter, BOLT, is partially implemented, and it will be the subject of a later article.
+However, in developing BOLT, it became apparent that just having bounds was not the end of the story.
+Most notably in processing loops, there was no enforcement of the meager bounds that had been reconstructed in the first pass.</p>
+</div>
+<div class="paragraph">
+<p>Another to-be-written article will discuss what changes Wizkit would like to make in the next IR iteration.
+Much of the emphasis of the proposed changes will be on making memory boundaries clear to the IR.
+I think another worthy goal, in the realm of balancing performance and complexity, would be for single-pass interpreters of the next IR to be competitive with multi-pass interpreters for this iteration.</p>
+</div>
+<div class="sidebarblock">
+<div class="content">
+<div class="paragraph">
+<p>This research was developed with funding from the Defense Advanced Research Projects Agency (DARPA) under Contract No. HR001120C0087.
+The views, opinions, and/or findings expressed are those of the author(s) and should not be interpreted as representing the official views or policies of the Department of Defense or the U.S. Government.</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+  <hr />
+  
+    <nav id="similarContent">
+      <h2 class="eyebrow">Similar Content</h2>
+      <ul>
+      
+        
+          
+            
+              <li>
+                <a href="/wizkit-blog/tag/sieve-ir
+">
+                  Tag: SIEVE IR
+                </a>
+                <ul>
+                
+                  
+                    <li><a href="/wizkit-blog/2022/05/26/replacing-the-sieve-ir.html">Replacing the SIEVE Intermediate Representation</a></li>
+                  
+                
+                  
+                
+                  
+                    <li><a href="/wizkit-blog/2021/09/20/introducing-the-sieve-ir.html">Introducing the SIEVE Intermediate Representation</a></li>
+                  
+                
+                </ul>
+              </li>
+            
+          
+        
+          
+        
+      
+        
+          
+        
+          
+            
+          
+        
+      
+      </ul>
+    </nav>
+    
+</article>
+
+</main>
+
+    <footer>
+      
+        <p id="distributionStatement">
+          <strong>Distribution Statement A:</strong> Approved for Public Release, Distribution Unlimited.
+        </p>
+      
+      <p>
+        Copyright &copy; 2021, Stealth Software Technologies, Inc.
+        All Rights Reserved.
+      </p>
+      
+        <p id="acknowledgement">
+          This research was developed with funding from the Defense Advanced Research Projects Agency (DARPA) under Contract No. HR001120C0087. The views, opinions, and/or findings expressed are those of the author(s) and should not be interpreted as representing the official views or policies of the Department of Defense or the U.S. Government.
+        </p>
+      
+
+      <a href="https://www.stealthsoftwareinc.com" id="bottomLogoImg">
+        <img
+          src="/wizkit-blog/assets/icons/tetra-solid-400x100.png"
+          alt="Stealth Software Technologies Home Page" /></a>
+
+      
+        <nav>
+          <strong>Navigation</strong>
+          
+            <br />
+            <a href="/wizkit-blog/">About</a>
+          
+            <br />
+            <a href="/wizkit-blog/blog.adoc">Blog</a>
+          
+            <br />
+            <a href="mailto:team-wizkit@stealthsoftwareinc.com">Contact</a>
+          
+        </nav>
+      
+    </footer>
+  </body>
+</html>
+
