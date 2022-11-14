@@ -79,9 +79,83 @@
 ">Retrospective</a>
     </li>
 
+    <li>
+
+      <a href="/wizkit-blog/tag/wiztoolkit
+">WizToolKit</a>
+    </li>
+
+    <li>
+
+      <a href="/wizkit-blog/tag/emp
+">EMP</a>
+    </li>
+
   </ul>
 </nav>
 
+
+  <hr />
+  <article>
+    <h2><a href="/wizkit-blog/2022/09/26/evolving-the-sieve-ir-our-concrete-proposal.html">Evolving the SIEVE IR: Our Concrete Proposal</a></h2>
+    <p>
+  <strong>Written:</strong>
+  <time datetime="2022-09-26 00:00:00 -0400">2022-09-26</time>,
+
+    <strong>Published:</strong>
+    <time datetime="2022-11-14"> 2022-11-14</time>,
+
+  <strong>Author:</strong> Kimberlee Model,
+
+    <strong>Tags:</strong>
+
+      <a href="/wizkit-blog/tag/sieve-ir
+">SIEVE IR</a>,
+
+
+</p>
+
+
+    <div class="paragraph">
+<p>Over this summer, Team Wizkit developed a concrete proposal for an overhaul of the SIEVE Intermediate Representation.
+While our proposal is a fairly radical departure from the original IR, we believe this proposal addresses our concerns about wire memory management and interoperability in the presence of wide differentiation between backend capabilities.
+In the upcoming months the SIEVE Program will internally agree upon a final draft for the Phase II IR, but we hope that sharing our IR proposal with the wider community will help others engage with the IR as it continues to evolve.</p>
+</div>
+  </article>
+
+  <hr />
+  <article>
+    <h2><a href="/wizkit-blog/2022/08/04/getting-started-with-the-ir.html">Getting Started with the SIEVE IR</a></h2>
+    <p>
+  <strong>Written:</strong>
+  <time datetime="2022-08-04 00:00:00 -0400">2022-08-04</time>,
+
+    <strong>Published:</strong>
+    <time datetime="2022-11-14"> 2022-11-14</time>,
+
+  <strong>Author:</strong> Kimberlee Model,
+
+    <strong>Tags:</strong>
+
+      <a href="/wizkit-blog/tag/wiztoolkit
+">WizToolKit</a>,
+
+      <a href="/wizkit-blog/tag/sieve-ir
+">SIEVE IR</a>,
+
+      <a href="/wizkit-blog/tag/emp
+">EMP</a>,
+
+
+</p>
+
+
+    <div class="paragraph">
+<p>By now, you&#8217;ve read up on the SIEVE IR, you&#8217;re interested in ZK, and you&#8217;re ready to try it out the IR, but you&#8217;re not sure where to start.
+For a ZK frontend, the IR opens up a world of backends, while for a backend it enables a wide variety of users to leverage your backend.
+Well, here&#8217;s where to start: Team Wizkit has open sourced <a href="https://github.com/stealthsoftwareinc/wiztoolkit">WizToolKit</a> a collection of tools and libraries for working with the IR and <a href="https://github.com/emp-toolkit/emp-ir">EMP-IR</a> a ZK Backend which uses the IR.</p>
+</div>
+  </article>
 
   <hr />
   <article>
@@ -109,6 +183,38 @@
 Since it was finalized during summer 2021, we continued to push the envelope beyond what was demonstrated during the Phase I Testing Event.
 We&#8217;ve also been one of the most active voices, within the SIEVE program, critically analyzing this IR.
 In this blog post, we put the results of the critique to good use in making design suggestions for the next IR revision.</p>
+</div>
+  </article>
+
+  <hr />
+  <article>
+    <h2><a href="/wizkit-blog/2021/11/19/BOLT-two-pass-interpreter.html">BOLT, Two Pass IR Interpreter</a></h2>
+    <p>
+  <strong>Written:</strong>
+  <time datetime="2021-11-19 00:00:00 -0500">2021-11-19</time>,
+
+    <strong>Published:</strong>
+    <time datetime="2022-11-14"> 2022-11-14</time>,
+
+  <strong>Author:</strong> Kimberlee Model,
+
+    <strong>Tags:</strong>
+
+      <a href="/wizkit-blog/tag/sieve-ir
+">SIEVE IR</a>,
+
+      <a href="/wizkit-blog/tag/wiztoolkit
+">WizToolKit</a>,
+
+
+</p>
+
+
+    <div class="paragraph">
+<p>In this installation about the SIEVE IR, we&#8217;re going to talk about speeding up a proof system without changing the underlying zero-knowledge mathemagic.
+When we time a ZK backend using the IR we inadvertently time two distinct components&#8201;&#8212;&#8201;the backend itself and the time it takes to ingest a circuit.
+The first component, the backend, is fairly well understood and many groups are working on optimizing this&#8201;&#8212;&#8201;faster math and less communication.
+The second component is the topic of today&#8217;s post; it&#8217;s the time spent reading a gate and loading its operands before it can be processed in ZK.</p>
 </div>
   </article>
 
@@ -204,7 +310,7 @@ It is our hope that this will ease you into using the SIEVE IR in your own work,
             <a href="/wizkit-blog/">About</a>
           
             <br />
-            <a href="/wizkit-blog/blog.adoc">Blog</a>
+            <a href="/wizkit-blog/blog.html">Blog</a>
           
             <br />
             <a href="mailto:team-wizkit@stealthsoftwareinc.com">Contact</a>

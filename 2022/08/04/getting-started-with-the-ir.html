@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Getting Started with the SIEVE IR - Team Wizkit</title>
+    <link rel="stylesheet"
+        href="/wizkit-blog/assets/css/fonts.css" />
+    <link rel="stylesheet"
+        href="/wizkit-blog/assets/css/layout.css" />
+    <link rel="stylesheet"
+        href="/wizkit-blog/assets/css/content.css" />
+
+    <link rel="shortcut icon" type="image/png"
+        href="/wizkit-blog/assets/icons/tetra-solid-32x32.png" />
+
+    <link type="application/atom+xml" rel="alternate" href="https://stealthsoftwareinc.github.io/wizkit-blog/feed.xml" title="Team Wizkit" />
+    <!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Getting Started with the SIEVE IR | Team Wizkit</title>
+<meta name="generator" content="Jekyll v4.2.2" />
+<meta property="og:title" content="Getting Started with the SIEVE IR" />
+<meta name="author" content="Kimberlee Model" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="By now, you&#8217;ve read up on the SIEVE IR, you&#8217;re interested in ZK, and you&#8217;re ready to try it out the IR, but you&#8217;re not sure where to start. For a ZK frontend, the IR opens up a world of backends, while for a backend it enables a wide variety of users to leverage your backend. Well, here&#8217;s where to start: Team Wizkit has open sourced WizToolKit a collection of tools and libraries for working with the IR and EMP-IR a ZK Backend which uses the IR." />
+<meta property="og:description" content="By now, you&#8217;ve read up on the SIEVE IR, you&#8217;re interested in ZK, and you&#8217;re ready to try it out the IR, but you&#8217;re not sure where to start. For a ZK frontend, the IR opens up a world of backends, while for a backend it enables a wide variety of users to leverage your backend. Well, here&#8217;s where to start: Team Wizkit has open sourced WizToolKit a collection of tools and libraries for working with the IR and EMP-IR a ZK Backend which uses the IR." />
+<link rel="canonical" href="https://stealthsoftwareinc.github.io/wizkit-blog/2022/08/04/getting-started-with-the-ir.html" />
+<meta property="og:url" content="https://stealthsoftwareinc.github.io/wizkit-blog/2022/08/04/getting-started-with-the-ir.html" />
+<meta property="og:site_name" content="Team Wizkit" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2022-08-04T00:00:00-04:00" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="Getting Started with the SIEVE IR" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Kimberlee Model"},"dateModified":"2022-08-04T00:00:00-04:00","datePublished":"2022-08-04T00:00:00-04:00","description":"By now, you&#8217;ve read up on the SIEVE IR, you&#8217;re interested in ZK, and you&#8217;re ready to try it out the IR, but you&#8217;re not sure where to start. For a ZK frontend, the IR opens up a world of backends, while for a backend it enables a wide variety of users to leverage your backend. Well, here&#8217;s where to start: Team Wizkit has open sourced WizToolKit a collection of tools and libraries for working with the IR and EMP-IR a ZK Backend which uses the IR.","headline":"Getting Started with the SIEVE IR","mainEntityOfPage":{"@type":"WebPage","@id":"https://stealthsoftwareinc.github.io/wizkit-blog/2022/08/04/getting-started-with-the-ir.html"},"url":"https://stealthsoftwareinc.github.io/wizkit-blog/2022/08/04/getting-started-with-the-ir.html"}</script>
+<!-- End Jekyll SEO tag -->
+
+
+    <script>0</script>
+  </head>
+  <body>
+    <header>
+      <nav id="topNav">
+        <a href="#main" id="jumpMain">Jump to Main</a>
+        <a href="https://www.stealthsoftwareinc.com" id="logoImg">
+          <img
+            src="/wizkit-blog/assets/icons/tetra-solid-100x100.png"
+            alt="Stealth Software Technologies Home Page" /></a>
+        <a href="/wizkit-blog/" id="titleLink">Team Wizkit</a>
+        <span id="spacer">&nbsp;</span>
+        
+          
+            <a href="/wizkit-blog/"
+              
+              >about</a>
+          
+        
+          
+            <a href="/wizkit-blog/blog.html"
+              
+              >blog</a>
+          
+        
+      </nav>
+    </header>
+    <main id="main" tabindex="-1">
+  <article>
+  <h1> Getting Started with the SIEVE IR</h1>
+  <p>
+  <strong>Written:</strong>
+  <time datetime="2022-08-04 00:00:00 -0400">2022-08-04</time>,
+  
+    <strong>Published:</strong>
+    <time datetime="2022-11-14"> 2022-11-14</time>,
+  
+  <strong>Author:</strong> Kimberlee Model,
+  
+    <strong>Tags:</strong>
+    
+      <a href="/wizkit-blog/tag/wiztoolkit
+">WizToolKit</a>,
+    
+      <a href="/wizkit-blog/tag/sieve-ir
+">SIEVE IR</a>,
+    
+      <a href="/wizkit-blog/tag/emp
+">EMP</a>,
+    
+  
+</p>
+
+
+  <hr />
+  <div class="paragraph">
+<p>By now, you&#8217;ve read up on the SIEVE IR, you&#8217;re interested in ZK, and you&#8217;re ready to try it out the IR, but you&#8217;re not sure where to start.
+For a ZK frontend, the IR opens up a world of backends, while for a backend it enables a wide variety of users to leverage your backend.
+Well, here&#8217;s where to start: Team Wizkit has open sourced <a href="https://github.com/stealthsoftwareinc/wiztoolkit">WizToolKit</a> a collection of tools and libraries for working with the IR and <a href="https://github.com/emp-toolkit/emp-ir">EMP-IR</a> a ZK Backend which uses the IR.</p>
+</div>
+<div class="paragraph">
+<p>For a ZK backend, a good place to start is with <a href="/wizkit-blog/2021/11/19/BOLT-two-pass-interpreter.html">WizToolKit&#8217;s BOLT API</a>.
+BOLT is a callback-based API for handling ZK gates interpreted from the IR.
+By implementing BOLT&#8217;s callbacks, your ZK Backend can easily and performantly ingest the SIEVE IR.
+To get started check out our tutorials <a href="https://stealthsoftwareinc.github.io/wiztoolkit/docs/v1.0.1/backends.html">for using BOLT</a> and <a href="https://stealthsoftwareinc.github.io/wiztoolkit/docs/v1.0.1/parsers.html">for parsing the IR</a>.</p>
+</div>
+<div class="paragraph">
+<p>For both frontends and backends, we have tools and demos to help you get started working the IR.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><a href="https://stealthsoftwareinc.github.io/wiztoolkit/docs/v1.0.1/tools/wtk-firealarm.html"><code>wtk-firealarm</code></a> can help you test and debug your IR circuits before you prove them in ZK. Its trace modes (<code>-t</code> or <code>-T</code> flags) can also help you sanity check when you&#8217;re struggling to debug your own ZK backends by printing out correct values for each wire in a circuit.</p>
+</li>
+<li>
+<p><a href="https://stealthsoftwareinc.github.io/wiztoolkit/docs/v1.0.1/tools/wtk-press.html"><code>wtk-press</code></a> can convert between the IR&#8217;s text and binary formats. It can also convert the IR&#8217;s <code>@switch</code> statements into multiplexer sub circuits&#8201;&#8212;&#8201;eliminating a large chunk of complexity for a backend.</p>
+</li>
+<li>
+<p><a href="https://stealthsoftwareinc.github.io/wiztoolkit/docs/v1.0.1/tools/wtk-viz.html"><code>wtk-viz</code></a> can convert an IR relation into a <a href="https://graphviz.org/">GraphViz</a> graph so that you can visualize your circuits.</p>
+</li>
+<li>
+<p><a href="https://github.com/stealthsoftwareinc/wiztoolkit/blob/main/src/main/python/matrix_prod.py">The matrix product python script</a> can generate samples of the IR using various primes, test case sizes, and can switch between using loops or IR-Simple. Use these circuits to test and benchmark your backend and check out the source code for a demonstration of generating the IR.</p>
+</li>
+<li>
+<p>Lastly, the <a href="https://github.com/emp-toolkit/emp-ir">EMP-IR</a> is a ZK backend ready for use with the IR. Test it out, or integrate it into your product.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>If the IR and our tooling sufficiently interests you, and you haven&#8217;t clicked away already then your best starting point is <a href="https://stealthsoftwareinc.github.io/wiztoolkit/docs/v1.0.1/install.html">the WizToolKit install guide</a> or <a href="https://github.com/emp-toolkit/emp-ir#installation">the EMP-IR install guide</a>.</p>
+</div>
+<div class="sidebarblock">
+<div class="content">
+<div class="paragraph">
+<p>This research was developed with funding from the Defense Advanced Research Projects Agency (DARPA) under Contract No. HR001120C0087.
+The views, opinions, and/or findings expressed are those of the author(s) and should not be interpreted as representing the official views or policies of the Department of Defense or the U.S. Government.</p>
+</div>
+</div>
+</div>
+  <hr />
+  
+    <nav id="similarContent">
+      <h2 class="eyebrow">Similar Content</h2>
+      <ul>
+      
+        
+          
+        
+          
+        
+          
+            
+              <li>
+                <a href="/wizkit-blog/tag/wiztoolkit
+">
+                  Tag: WizToolKit
+                </a>
+                <ul>
+                
+                  
+                
+                  
+                    <li><a href="/wizkit-blog/2021/11/19/BOLT-two-pass-interpreter.html">BOLT, Two Pass IR Interpreter</a></li>
+                  
+                
+                </ul>
+              </li>
+            
+          
+        
+          
+        
+      
+        
+          
+            
+              <li>
+                <a href="/wizkit-blog/tag/sieve-ir
+">
+                  Tag: SIEVE IR
+                </a>
+                <ul>
+                
+                  
+                    <li><a href="/wizkit-blog/2022/09/26/evolving-the-sieve-ir-our-concrete-proposal.html">Evolving the SIEVE IR: Our Concrete Proposal</a></li>
+                  
+                
+                  
+                
+                  
+                    <li><a href="/wizkit-blog/2022/05/26/replacing-the-sieve-ir.html">Replacing the SIEVE Intermediate Representation</a></li>
+                  
+                
+                  
+                    <li><a href="/wizkit-blog/2021/11/19/BOLT-two-pass-interpreter.html">BOLT, Two Pass IR Interpreter</a></li>
+                  
+                
+                  
+                    <li><a href="/wizkit-blog/2021/11/01/sieve-ir-v1.0-retrospective.html">SIEVE IR v1.0 Retrospective</a></li>
+                  
+                
+                  
+                    <li><a href="/wizkit-blog/2021/09/20/introducing-the-sieve-ir.html">Introducing the SIEVE Intermediate Representation</a></li>
+                  
+                
+                </ul>
+              </li>
+            
+          
+        
+          
+        
+          
+        
+          
+        
+      
+        
+          
+        
+          
+        
+          
+        
+          
+            
+          
+        
+      
+      </ul>
+    </nav>
+    
+</article>
+
+</main>
+
+    <footer>
+      
+        <p id="distributionStatement">
+          <strong>Distribution Statement A:</strong> Approved for Public Release, Distribution Unlimited.
+        </p>
+      
+      <p>
+        Copyright &copy; 2022, Stealth Software Technologies, Inc.
+        All Rights Reserved.
+      </p>
+      
+        <p id="acknowledgement">
+          This research was developed with funding from the Defense Advanced Research Projects Agency (DARPA) under Contract No. HR001120C0087. The views, opinions, and/or findings expressed are those of the author(s) and should not be interpreted as representing the official views or policies of the Department of Defense or the U.S. Government.
+        </p>
+      
+
+      <a href="https://www.stealthsoftwareinc.com" id="bottomLogoImg">
+        <img
+          src="/wizkit-blog/assets/icons/tetra-solid-400x100.png"
+          alt="Stealth Software Technologies Home Page" /></a>
+
+      
+        <nav>
+          <strong>Navigation</strong>
+          
+            <br />
+            <a href="/wizkit-blog/">About</a>
+          
+            <br />
+            <a href="/wizkit-blog/blog.html">Blog</a>
+          
+            <br />
+            <a href="mailto:team-wizkit@stealthsoftwareinc.com">Contact</a>
+          
+        </nav>
+      
+    </footer>
+  </body>
+</html>
+

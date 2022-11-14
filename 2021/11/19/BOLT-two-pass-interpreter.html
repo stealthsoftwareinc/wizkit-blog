@@ -1,0 +1,962 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>BOLT, Two Pass IR Interpreter - Team Wizkit</title>
+    <link rel="stylesheet"
+        href="/wizkit-blog/assets/css/fonts.css" />
+    <link rel="stylesheet"
+        href="/wizkit-blog/assets/css/layout.css" />
+    <link rel="stylesheet"
+        href="/wizkit-blog/assets/css/content.css" />
+
+    <link rel="shortcut icon" type="image/png"
+        href="/wizkit-blog/assets/icons/tetra-solid-32x32.png" />
+
+    <link type="application/atom+xml" rel="alternate" href="https://stealthsoftwareinc.github.io/wizkit-blog/feed.xml" title="Team Wizkit" />
+    <!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>BOLT, Two Pass IR Interpreter | Team Wizkit</title>
+<meta name="generator" content="Jekyll v4.2.2" />
+<meta property="og:title" content="BOLT, Two Pass IR Interpreter" />
+<meta name="author" content="Kimberlee Model" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="In this installation about the SIEVE IR, we&#8217;re going to talk about speeding up a proof system without changing the underlying zero-knowledge mathemagic. When we time a ZK backend using the IR we inadvertently time two distinct components&#8201;&#8212;&#8201;the backend itself and the time it takes to ingest a circuit. The first component, the backend, is fairly well understood and many groups are working on optimizing this&#8201;&#8212;&#8201;faster math and less communication. The second component is the topic of today&#8217;s post; it&#8217;s the time spent reading a gate and loading its operands before it can be processed in ZK." />
+<meta property="og:description" content="In this installation about the SIEVE IR, we&#8217;re going to talk about speeding up a proof system without changing the underlying zero-knowledge mathemagic. When we time a ZK backend using the IR we inadvertently time two distinct components&#8201;&#8212;&#8201;the backend itself and the time it takes to ingest a circuit. The first component, the backend, is fairly well understood and many groups are working on optimizing this&#8201;&#8212;&#8201;faster math and less communication. The second component is the topic of today&#8217;s post; it&#8217;s the time spent reading a gate and loading its operands before it can be processed in ZK." />
+<link rel="canonical" href="https://stealthsoftwareinc.github.io/wizkit-blog/2021/11/19/BOLT-two-pass-interpreter.html" />
+<meta property="og:url" content="https://stealthsoftwareinc.github.io/wizkit-blog/2021/11/19/BOLT-two-pass-interpreter.html" />
+<meta property="og:site_name" content="Team Wizkit" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2021-11-19T00:00:00-05:00" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="BOLT, Two Pass IR Interpreter" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Kimberlee Model"},"dateModified":"2021-11-19T00:00:00-05:00","datePublished":"2021-11-19T00:00:00-05:00","description":"In this installation about the SIEVE IR, we&#8217;re going to talk about speeding up a proof system without changing the underlying zero-knowledge mathemagic. When we time a ZK backend using the IR we inadvertently time two distinct components&#8201;&#8212;&#8201;the backend itself and the time it takes to ingest a circuit. The first component, the backend, is fairly well understood and many groups are working on optimizing this&#8201;&#8212;&#8201;faster math and less communication. The second component is the topic of today&#8217;s post; it&#8217;s the time spent reading a gate and loading its operands before it can be processed in ZK.","headline":"BOLT, Two Pass IR Interpreter","mainEntityOfPage":{"@type":"WebPage","@id":"https://stealthsoftwareinc.github.io/wizkit-blog/2021/11/19/BOLT-two-pass-interpreter.html"},"url":"https://stealthsoftwareinc.github.io/wizkit-blog/2021/11/19/BOLT-two-pass-interpreter.html"}</script>
+<!-- End Jekyll SEO tag -->
+
+
+    <script>0</script>
+  </head>
+  <body>
+    <header>
+      <nav id="topNav">
+        <a href="#main" id="jumpMain">Jump to Main</a>
+        <a href="https://www.stealthsoftwareinc.com" id="logoImg">
+          <img
+            src="/wizkit-blog/assets/icons/tetra-solid-100x100.png"
+            alt="Stealth Software Technologies Home Page" /></a>
+        <a href="/wizkit-blog/" id="titleLink">Team Wizkit</a>
+        <span id="spacer">&nbsp;</span>
+        
+          
+            <a href="/wizkit-blog/"
+              
+              >about</a>
+          
+        
+          
+            <a href="/wizkit-blog/blog.html"
+              
+              >blog</a>
+          
+        
+      </nav>
+    </header>
+    <main id="main" tabindex="-1">
+  <article>
+  <h1> BOLT, Two Pass IR Interpreter</h1>
+  <p>
+  <strong>Written:</strong>
+  <time datetime="2021-11-19 00:00:00 -0500">2021-11-19</time>,
+  
+    <strong>Published:</strong>
+    <time datetime="2022-11-14"> 2022-11-14</time>,
+  
+  <strong>Author:</strong> Kimberlee Model,
+  
+    <strong>Tags:</strong>
+    
+      <a href="/wizkit-blog/tag/sieve-ir
+">SIEVE IR</a>,
+    
+      <a href="/wizkit-blog/tag/wiztoolkit
+">WizToolKit</a>,
+    
+  
+</p>
+
+
+  <hr />
+  <div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>In this installation about the SIEVE IR, we&#8217;re going to talk about speeding up a proof system without changing the underlying zero-knowledge mathemagic.
+When we time a ZK backend using the IR we inadvertently time two distinct components&#8201;&#8212;&#8201;the backend itself and the time it takes to ingest a circuit.
+The first component, the backend, is fairly well understood and many groups are working on optimizing this&#8201;&#8212;&#8201;faster math and less communication.
+The second component is the topic of today&#8217;s post; it&#8217;s the time spent reading a gate and loading its operands before it can be processed in ZK.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+If you&#8217;re looking for <em>how to use</em> BOLT, have a look at <a href="https://stealthsoftwareinc.github.io/wiztoolkit/docs/v1.0.1/backends.html">WizToolKit&#8217;s documentation for BOLT</a>. This post is about <em>how BOLT works</em>.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>We first looked into this problem after noticing that interpreting loops and functions was significantly slower in the IR than the IO and parsing time for an equivalent IR-Simple circuit&#8201;&#8212;&#8201;contrary to our expectation.
+While some of the weaknesses outlined in our <a href="/wizkit-blog/2021/11/01/sieve-ir-v1.0-retrospective.html">IR Retrospective</a> certainly exacerbate the issue, we also stumble into the age old conflict of interpreters vs. compilers (Python vs. C, etc.).
+While we have developed an extremely performant IR compiler, this post focuses on interpreters for the IR and takes half a step towards Just-In-Time (JIT) compilation.</p>
+</div>
+<div class="paragraph">
+<p>The largest source of overhead which we encountered is searching for wires in lookup tables.
+With loops and functions the lookup table must be built, destroyed and rebuilt on each iteration or invocation, causing significant slow downs.
+We solve this problem by building an in memory data-structure where a single lookup table is built once and reused on many occurrences, and where each lookup operation is cached as a pointer into the table.
+At the time of writing, we have already developed a partial prototype of this system.
+This post will start out with results from the prototype in a non-ZK setting, then it will narrate development of the full system, and overview some results using the <a href="https://github.com/emp-toolkit/emp-zk">EMP-ZK backend</a>.</p>
+</div>
+<div class="paragraph">
+<p>If you&#8217;re unfamiliar with the SIEVE IR, you&#8217;ll want to read our <a href="/wizkit-blog/2021/09/20/introducing-the-sieve-ir.html">IR Introduction</a> and <a href="/wizkit-blog/2021/11/01/sieve-ir-v1.0-retrospective.html">Retrospective</a> before reading this.
+You should also be prepared for some <a href="https://en.wikipedia.org/wiki/Mathematical_induction">proof by induction</a> and <a href="https://en.wikipedia.org/wiki/Unified_Modeling_Language">UML</a>.
+We also clarify the following terms.
+<strong>Overhead</strong>, in this context, is any time spent by a ZK proof system which isn&#8217;t directly related to the proof, so parsing and compiling or interpreting the circuit.
+The <strong>parser</strong> is the first stage of processing the IR in which a sequence of characters matching the IR&#8217;s grammar is converted into a <strong>parse tree</strong> (or synonymously, syntax tree).
+Both an IR compiler and interpreter will parse the IR, but the <strong>compiler</strong> will analyze the parse tree and produce an executable program which then performs the proof, while the <strong>interpreter</strong> will analyze the parse tree and perform a proof without an intermediate executable.
+We further classify <strong>single-pass interpreters</strong> which immediately walk the parse tree and perform one step of the proof at each node, and <strong>multi-pass</strong> (or <strong>two, three, etc. -pass</strong>) <strong>interpreters</strong> which walk the tree multiple times, first doing analysis and building state data, then finally performing the proof.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="prototype-and-early-results">Prototype and Early Results</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Our prototype succeeded in accelerating many samples of the IR, but it also entirely failed to interpret <code>@switch</code> statements and certain classes of <code>@for</code> loops.
+Further we only developed it in a non-ZK setting.
+That seems like a big failure for a supposedly ZK piece of equipment, but it gives us a lower bound the entire proof system&#8217;s runtime, e.g. how long would the proof take if ZK were entirely free.</p>
+</div>
+<div class="paragraph">
+<p>After parsing, the prototype works in two phases.
+First, the <strong>build phase</strong> analyzes the parse tree and rebuilds it with embedded lookup tables and cached pointers into those tables.
+The build phase is able to embed most <em>public</em> semantics (such as "repeat this loop 5 times") into the tree.
+Then the <strong>evaluate phase</strong> traverses the optimized parse tree and invokes a callback to handle each gate&#8217;s private semantics (such as "prove that `a * b == c`").
+In the prototype we only implemented gate callbacks for the non-ZK setting, hence this limitation.</p>
+</div>
+<div class="paragraph">
+<p>We were able to compare our BOLT prototype with <a href="https://stealthsoftwareinc.github.io/wiztoolkit/docs/v1.0.1/tools/wtk-firealarm.html">FIREALARM</a> (our non-ZK IR interpreter for debugging and development) as a single-pass baseline.
+We used our <a href="https://github.com/stealthsoftwareinc/wiztoolkit/blob/main/src/main/python/matrix_prod.py">matrix-multiply family of circuits</a> as test inputs to show scalability of this solution.</p>
+</div>
+<div class="paragraph">
+<p>The figure compares runtimes for each phase of the IR processing solution, further broken down by the IR&#8217;s mode (simple or using loops).
+It also shows target metrics for the SIEVE Program&#8217;s phases (arbitrary annual boundaries on our research).
+During Phase II our target metric is 1 µs/gate, which I&#8217;ve converted to wall-clock time for the appropriate gate count (red with dots).
+During Phase III our target metric is 0.1 µs/gate, again converted to wall-clock time (black with triangles).
+Note that wall-clock time for a particular solution would be each of its phases summed together (e.g. parse time + firealarm time or parse time + build time + evaluate time).</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="/wizkit-blog/attachments/bolt/timing_motivation.png" alt="timing motivation">
+</div>
+<div class="title">Figure 1. Plot comparing the runtime of various phases in a FIREALARM or BOLT approach, <a href="/wizkit-blog/attachments/bolt/timing_motivation.csv">raw data</a></div>
+</div>
+<div class="paragraph">
+<p>Before prototyping BOLT, the surprising result was that processing loops (orange with squares) was far slower than parsing (purple with vertical bars) and processing IR-Simple (aqua with stars).
+End-to-end, the IR-Simple solution takes 0.121 µs/gate (purple with bars plus aqua with stars), which is just a bit shy of the Phase III target and leaves no time for actually performing the proof.
+This discrepancy is what motivated us to develop BOLT.</p>
+</div>
+<div class="paragraph">
+<p>The prototype improves upon this in a few respects.
+First, parsing additional iterations of a loop does not add to the parsing time.
+In fact, for this test case (and likely many others), parsing loops is a small constant runtime (green with cross, partially covered along the bottom).
+As it turns out, the build phase is also a nearly-zero constant (yellow with squares, along the bottom).
+This leaves the evaluate phase (blue with circles), which is on par with parsing or processing IR-Simple.
+Overall, the BOLT prototype managed 0.061 µs/gate, which leaves a tight margin for performing the proof, but also has room for improvement.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="approach">Approach</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Before getting into the design of BOLT, lets go over a quick example to animate the problem and how we solve it.
+In the first animation, a vector dot product function of length 4 is shown.
+Each frame traces a step of processing the sub-circuit in a single pass.
+Many more frames show table lookups or insertions than show gate operations.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="/wizkit-blog/attachments/bolt/single-pass-dotprod.gif" alt="Animation. It starts out showing an IR function with 1 output and 8 inputs wires. 4 multiplication gates multiply pairs of elements from the first 4 and last 4 input wires" width="then 3 addition gates sum the products. On each frame an arrow is draw from an element of the code to a table operation (lookup or insert) and then into a table. It starts out inserting two groups of four input wires" height="then the single output wire. Next">
+</div>
+<div class="title">Figure 2. A single pass interpreter processes a vector dot product.</div>
+</div>
+<div class="paragraph">
+<p>Our second animation shows the approach of BOLT.
+Rather than processing the parse tree directly, it is replaced with an alternate representation with pointers directly into a pre-built table.
+On each gate, pointer reads and writes save time when compared to looking up or inserting to the table.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="/wizkit-blog/attachments/bolt/multi-pass-dotprod.gif" alt="Animation. It starts out showing an IR-like function" width="however wire numbers in its body have been replaced with pointers. A memory table is also provided ahead of time. The function has 1 output and 8 input wires. 4 multiplication gates are shown followed by 3 addition gates. On each frame an arrow is drawn to or from one of the pointers from or to the table. It starts out by updating the table with two groups of four input wires. Then it updates a single wire reserved for function's output. Next" height="on each gate">
+</div>
+<div class="title">Figure 3. The BOLT interpreter processes a vector dot product.</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="design">Design</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Before getting to the design, there are three numeric type abstractions.
+The <code>wtk::index_t</code> (defined in <a href="https://github.com/stealthsoftwareinc/wiztoolkit/blob/main/src/main/cpp/wtk/index.h"><code>wtk/index.h</code></a>) holds a wire-index, the <code>$</code> prefixed numbers indexing all wires in the IR.
+The <code>wtk::index_t</code> is a simple <code>typedef</code> of <code>uint64_t</code>, thus capturing the <em>mod-2<sup>64</sup></em> behavior described for loop iterator-expressions and wire-numbers.
+After that, BOLT is template-parameterized by the <code>Wire_T</code> and the <code>Number_T</code>.
+The <code>Wire_T</code> is to encapsulate all values which the ZK Backend must carry between gates.
+BOLT does not require it be a numeric type, although it is sometimes easy to think of it as such.
+The <code>Number_T</code> holds field-literal values coming from the parser, before they&#8217;re mixed into <code>Wire_T</code>s.</p>
+</div>
+<div class="paragraph">
+<p>BOLT has a pretty simple design at a high level.
+BOLT connects <em>directives</em> directly to <em>wires</em> by rebuilding the IR syntax-tree and replacing the <code>wtk::index_t</code> indices with <code>Wire_T*</code> pointers.
+The <a href="https://github.com/stealthsoftwareinc/wiztoolkit/blob/main/src/main/cpp/wtk/IRTree.h">original syntax-tree</a> is fairly straight-forward, mirroring the grammar of the IR.
+The BOLT structure is a bit more complicated and with wires being cross-referenced from "directive trees" to their storage space.</p>
+</div>
+<div class="paragraph">
+<p>Directives are a simple tree-like structure, the <code>Bolt</code> struct (for lack of a better name) being the entry point.
+For most directives, an "in-order" tree traversal should produce a correct evaluation.
+When loops or function-gates are encountered, repetition of a particular sub-tree produces the correct evaluation (this will be elaborated in later subsections).
+Wires are stored and looked up by the <code>WireSet</code> and <code>WireRange</code> families and connected to directives by the <code>WireRef</code> union-type.
+The <code>WireRef</code> has two "addressing modes": <em>direct</em>, with a single pointer to a wire, and <em>indirect</em> with a pointer to and index in a <code>WireRange</code>.
+BOLT does its best to use <em>direct</em> addressing as much as possible, however, <em>indirect</em> referencing is necessary when referencing for-loop iterator-expressions, or when reusing a function-gate at multiple call sites.</p>
+</div>
+<div class="admonitionblock important">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Important</div>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>Two class-families are implemented as unions while shown as inheritance in UML (which conveniently pretends that unions do not exist).</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Directives must be elements of the same list, even though they differ in function and purpose&#8201;&#8212;&#8201;not an "is a" relationship.</p>
+</li>
+<li>
+<p><code>WireRef</code>s could use inheritance (and did in the original prototype), however as there are only two modes, the use of a union leads to a cleaner memory layout.</p>
+</li>
+</ul>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+BOLT (and WizToolKit in general) makes heavy use of a pool allocation pattern in which a "factory" or "builder" object produces some mess of structures, which take on the lifetime of the "factory".
+</td>
+</tr>
+</table>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="/wizkit-blog/attachments/bolt/UML_simple.png" alt="UML simple">
+</div>
+<div class="title">Figure 4. UML Diagram for BOLT (showing only simple directives). Along the top-left are the <code>WireRange</code> family, and along the bottom-right the <code>Directive</code> family. Connecting wires to directives the <code>WireRef</code> is above-center. The <code>Bolt</code> entry-point is pictured in the center-right, and its <code>WireSet</code> helper is below-center. Struct definitions can be found at <a href="https://github.com/stealthsoftwareinc/wiztoolkit/blob/main/src/main/cpp/wtk/bolt/wires.h"><code>wtk/bolt/wires.h</code></a> and <a href="https://github.com/stealthsoftwareinc/wiztoolkit/blob/main/src/main/cpp/wtk/bolt/directives.h"><code>wtk/bolt/directives.h</code></a></div>
+</div>
+<div class="paragraph">
+<p>A <code>Builder</code> object (not shown) is responsible for translation of a single syntax-tree node (<code>wtk::DirectiveList</code>) into the BOLT structure.
+If build succeeds, it guarantees that the relation, and consequently the produced BOLT structure, is well-formed and safe to evaluate.
+The <code>Builder</code> optimizes the IR by analyzing one scope at a time.
+In each scope, it follows these four steps:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Step 1: Reconstruct each scope&#8217;s memory layout.</p>
+</li>
+<li>
+<p>Step 2: Preallocate space for wires.</p>
+</li>
+<li>
+<p>Step 3: Rebuild each directive with pointers directly to preallocated space.</p>
+</li>
+<li>
+<p>Step 4: Profit. (Well, okay. Execution of the scope will have a large constant-factor reduction in overhead)</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Reconstruction is pretty simple.
+We use a data structure which I&#8217;ve been calling a <em>SkipList</em> (although I&#8217;ve recently been informed that a <em>SkipList</em> is actually a multiply-linked-list with <em>O(log(n))</em> access time, which this is not).
+My <em>SkipLists</em> are more like "ordered range sets": an ordered list of ranges (<code>first</code> and <code>last</code> pairs) which define membership.
+Thus upon entry to any scope of the IR, the first thing to be done is to traverse all directives, and insert every assigned wire into a <em>SkipList</em>, the <em>"all list"</em>.</p>
+</div>
+<div class="paragraph">
+<p>With all wires now accounted, they can be preallocated.
+Local wires are to be allocated as <code>LocalWireRange</code>s in a <code>WireSet</code>.
+The <code>WireSet.ranges</code> vector mirrors the structure of the local ranges within the <em>all list</em>.
+Input and output wires are typically handled by the calling scope; we&#8217;ll cover them later.</p>
+</div>
+<div class="paragraph">
+<p>Each directive is then rebuilt one by one.
+At each directive, the wires must be checked, to ensure that the relation is indeed well-formed.
+This is done with two additional <em>SkipLists</em>:</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><em>assigned</em></dt>
+<dd>
+<p>for wires which were assigned by previous directives.</p>
+</dd>
+<dt class="hdlist1"><em>deleted</em></dt>
+<dd>
+<p>to track <code>@delete</code>d wires.</p>
+</dd>
+</dl>
+</div>
+<div class="paragraph">
+<p>Input wires must be members of the <em>assigned list</em> and non-members of the <em>deleted list</em>.
+Output-wires are then inserted (with failure on duplication) into the <em>assigned list</em>.
+Once the directive is deemed acceptable, each wire may be looked up and referenced: <code>Bolt.findWire(&#8230;&#8203;)</code> delegates to <code>WireSet.findRange(&#8230;&#8203;)</code> and <code>WireRange.ref(&#8230;&#8203;)</code>.</p>
+</div>
+<div class="paragraph">
+<p>Most of the time, this will produce a pointer directly to the wire, allowing the evaluation phase to skip out on safety-checks and lookup costs.
+<em>Evaluation</em> can still be considered safe, because the <em>Build</em> phase would have aborted before producing an unsafe pointer.
+The performance gain is especially effective with loops, because repetition allows a single directive to be reused many times.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="remapping-wires-between-scopes">Remapping Wires Between Scopes</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>In lieu of a conventional lexical scoping scheme, the IR uses a local scoping scheme with "remapping" from the calling scope to a local scope.
+Variances in remapping lead to a family of <code>WireRange</code>s, responsible for handling various cases of remapping.</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">Local</dt>
+<dd>
+<p>has ownership over a vector of wires in the local-scope. Lookup is performed via vector-indexing.</p>
+</dd>
+<dt class="hdlist1">Direct</dt>
+<dd>
+<p>is the simplest form of remapping, with a pointer into a containing scope&#8217;s local-scope. Lookup is performed via pointer-offset.</p>
+</dd>
+<dt class="hdlist1">Indirect</dt>
+<dd>
+<p>holds a pointer to another <code>WireRange</code>, to which all functionality is delegated.</p>
+</dd>
+<dt class="hdlist1">WireSet</dt>
+<dd>
+<p>Similar to <em>Indirect</em>, however it delegates to a <code>WireSet</code> rather than a <code>WireRange</code>.</p>
+</dd>
+</dl>
+</div>
+<div class="paragraph">
+<p>The <code>Builder</code> takes the responsibility for checking that any <code>WireRange</code> is safe to dereference before it is built.
+In other words, the construction of an unsafe <code>WireRange</code> would be indicative of a poorly-formed relation.
+Each <code>WireRange</code> has three essential functionalities which the <code>Builder</code> must guard.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>producing a reference to a single wire (<code>ref(single)</code>),</p>
+</li>
+<li>
+<p>producing a <code>WireRange</code> reference to itself or a subset of itself (<code>ref(range)</code>),</p>
+</li>
+<li>
+<p>and dereferencing single wires within itself, as a requirement for <em>Indirect</em> referencing schemes.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Dashed arrows in the UML are used to indicate each <code>WireRange</code>'s means of reference.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="/wizkit-blog/attachments/bolt/UML_functions.png" alt="UML functions">
+</div>
+<div class="title">Figure 5. UML Diagram for BOLT, simple directives are replaced with <code>AnonFunction</code>, <code>Function</code>, and <code>Invocation</code>. Additional <code>WireRange</code> forms are shown as needed for function gates.</div>
+</div>
+<div class="paragraph">
+<p>The goal for BOLT is to produce as many <em>direct</em> references as possible.
+In the following sub-sections, we&#8217;ll get into the remapping for each of the non-simple IR1 directives, starting from least to most complicated.</p>
+</div>
+<div class="sect2">
+<h3 id="anonymous-function">Anonymous Function</h3>
+<div class="paragraph">
+<p>Anonymous functions are the easiest to remap, because they are used exactly once.
+First, the caller will check for usability of the input wires in the <em>assigned</em> and <em>deleted SkipLists</em>, and then for assignability of the output wires.
+When it knows the function is safe to call, it produces <em>direct</em> references for its local wires, and polymorphism&#8201;&#8212;&#8201;within its own remapped wire ranges&#8201;&#8212;&#8201;produces the simplest remapping it can for previously-remapped wires.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="named-function">Named Function</h3>
+<div class="paragraph">
+<p>Named functions are slightly more difficult than anonymous ones, because they may be reused multiple times.
+To save time during the build phase, we want to reuse the <code>Bolt</code> structure built for the function.
+To do this, remapping must be split between the function-body and each invocation.</p>
+</div>
+<div class="paragraph">
+<p>In the function-body, a placeholder wire range is mapped into the the <code>Bolt</code> body.
+A <code>WireSetWireRangeRef</code> is used, with a <code>WireSet*</code> pointer initialized to null.
+The placeholder creates <em>Indirect</em> references to itself, so that the body can be built.
+During evaluation, the <code>WireSet*</code> pointer is changed to non-null so that actual wires can be referenced.</p>
+</div>
+<div class="paragraph">
+<p>At the invocation site, wires from the caller&#8217;s scope are mapped into a <code>WireSet</code> using the similar rules to an Anonymous Function.
+At evaluation time, this <code>WireSet</code> is pointed to by the function&#8217;s placeholder.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="switch-statement">Switch Statement</h3>
+<div class="paragraph">
+<p>IR switch statements differ from conventional switches because all <code>@case</code>s must be processed to hide the switch condition wire.
+After processing all <code>@case</code>s the output wires from the <em>selected</em> <code>@case</code> is multiplexed onto the <code>@case</code>'s output wires.
+This is complicated by <code>@assert_zero</code> directives, which are disabled in <em>non-selected</em> <code>@case</code>s and by <code>@instance</code> and <code>@short_witness</code> directives which must share input values across cases to avoid blowup in the stream size.</p>
+</div>
+<div class="paragraph">
+<p>Building and evaluating a switch statement is sort of a three step process.
+Remember that each <code>@case</code> has its own input list (as either a named or an anonymous function), but all <code>@case</code>s share the <code>@switch</code>'s output list.</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Each <code>@case</code>'s Instances and Witnesses counted and the maximum is taken as the <code>@switch</code>'s output count.</p>
+<div class="ulist">
+<ul>
+<li>
+<p>During evaluation, the <code>@switch</code> consumes inputs which are routed to <code>@instance</code> and <code>@short_witness</code> directives within the switch.</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>"Dummy" output wires and "legitimate" input wires are mapped into each <code>@case</code>'s body.</p>
+</li>
+<li>
+<p>During evaluation, after all <code>@case</code>s are evaluated, the dummies are multiplexed into the legitimate outputs.</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>Step one happens dynamically during evaluation, aside from counting the maximum consumption of instance and witness wires.
+The <code>@switch</code> will consume all the necessary inputs and places them in a special buffer (<code>SwitchInputHandler</code>).
+The body of each <code>@case</code> is given a pointer to the buffer in place of the normal streams (<code>wtk::InputStream</code>).
+<code>@instance</code> and <code>@short_witness</code> directives copy wires from the buffer rather than consuming from the stream.</p>
+</div>
+<div class="paragraph">
+<p>Step two is again fairly straight forward.
+As each <code>@case</code> has none of its own output wires (only the <code>@switch</code>'s, at a top level), the total number of outputs can be counted, and a <code>LocalWireRange</code> may be allocated as "dummy" space for each <code>@case</code>.
+Then the input wires can be mapped in, and processing of each <code>@case</code> continues the same as it would for a standard <code>@call</code> or <code>@anon_call</code>.
+When processing the body during evaluation, a special <em>case-enabled</em> wire is carried to toggle inputs to <code>@assert_zero</code> directives.</p>
+</div>
+<div class="paragraph">
+<p>The last step of build remaps each of the <code>@switch</code>'s outputs to a special <em>output</em> <code>WireSet</code>.
+At evaluation, the dummy wires are multiplexed, and each result is assigned to the corresponding wire in the <em>output</em> <code>WireSet</code>.
+The BOLT system defaults to the <em>Fermat&#8217;s Little Theorem</em> trick described in section 6.3 of the IR spec.
+However, ZK backends could improve upon this with dynamic generation of additional witness values.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="/wizkit-blog/attachments/bolt/UML_switches.png" alt="UML switches">
+</div>
+<div class="title">Figure 6. UML Diagram for BOLT&#8217;s switch-statement implementation. The <code>SwitchStatement</code> type relies on <code>Invocation</code> and <code>AnonFunction</code> for each case, along with a <code>SwitchInputHandler</code> that manages reuse of instance and witness values.</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="for-loops">For Loops</h3>
+<div class="paragraph">
+<p>For loops are where wire-remapping gets <strong>really</strong> tricky, because the remapping indexes change on each iteration, due to iterator-expressions and iterator-expression-ranges
+(from now on I will use "expression" synonymously with "iterator-expression" and "iterator-expression range", as a single "iterator-expression" is simply a range with a constant span of 1).
+BOLT has three code paths for processing a loop.</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p><strong>Shortcut</strong>, where the well-formedness of its iterations may be extrapolated from its bounds.</p>
+</li>
+<li>
+<p><strong>Soft Unrolling</strong>, where each iteration has its remapping tested individually, but all iterations share the same body.</p>
+</li>
+<li>
+<p><strong>Hard Unrolling</strong>, where each iteration has an individual remapping and body.</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>Shortcut and soft unrolling can be applied in a hybrid fashion where some expressions are shortcut and others are soft unrolled.
+Unfortunately, hard unrolling is an all-or-nothing deal.</p>
+</div>
+<div class="paragraph">
+<p>IR specification compliance can be summarized to a few simple heuristics.
+However, the general case requires most of them be checked on each iteration.</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Every input wire in every iteration must have been assigned previously.</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Assignment could be before the loop,</p>
+</li>
+<li>
+<p>Or in a prior iteration of the loop.</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>Every output wire in every iteration of the loop must be assignable.</p>
+</li>
+<li>
+<p>The union of all iterations' outputs must be equal to the entire loop&#8217;s outputs.</p>
+</li>
+<li>
+<p>Lastly, either the named function must receive the correct number of inputs and outputs, or the anonymous body must itself be well-formed on all iterations.
+Typically, the latter requires that all iterations have the same number of inputs and outputs.</p>
+<div class="ulist">
+<ul>
+<li>
+<p>There are some exceptions to having same-sized iterations, however these should be uncommon enough to be penalized by unrolling.</p>
+</li>
+</ul>
+</div>
+</li>
+</ol>
+</div>
+<div class="sect3">
+<h4 id="detecting-shortcuts">Detecting Shortcuts</h4>
+<div class="paragraph">
+<p>BOLT does its best to come up with specific cases which it can shortcut, and attempts to fall back to unrolling as infrequently as possible.
+A trivial shortcut rule is if an input expression is constant and is assigned entirely before the loop.
+The non-trivial shortcuts will interpolate a total range (minimum through maximum values) for each expression, and show that the entire range is either referencable for inputs or assignable for outputs.
+To do this it has the following conditions.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+This isn&#8217;t to say that an extrapolation couldn&#8217;t be made with different conditions. These ones happen to be a fairly straight-forward baseline, and to cover many common cases of loops.
+</td>
+</tr>
+</table>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">The expression must be a linear expression.</dt>
+<dd>
+<p>For a linear expression, the expression&#8217;s minimum and maximum values (forming the total range) will occur at a loop bound.
+This is also a prerequisite for later conditions.</p>
+<div class="ulist">
+<ul>
+<li>
+<p>A sub condition is that evaluation at bounds must not cause integer overflow.
+Integer overflow would cause a discontinuity, meaning the minima and maxima may occur on a middle iteration.
+Inductively, if a middle iteration causes overflow, then either the next or previous iteration would cause overflow until a bound is met.</p>
+</li>
+</ul>
+</div>
+</dd>
+<dt class="hdlist1">The expression must have the same span at the loops' bounds.</dt>
+<dd>
+<p>(including combinations of outer-loops' bounds, if the expression depends on outer-loop iterators) If all expressions meet this condition, then each iteration must have the same number of outputs and inputs.</p>
+<div class="ulist">
+<ul>
+<li>
+<p>As a sub-condition, the expression&#8217;s span must be 1 or more, to respect well-formedness rules.</p>
+</li>
+</ul>
+</div>
+</dd>
+<dt class="hdlist1">The <em>output</em> expression must have adjacent first and second iterations (or the loop may have only one iteration).</dt>
+<dd>
+<p>(e.g. <em>i<sub>1</sub>.last == i<sub>2</sub>.first - 1</em> or <em>i<sub>1</sub>.first == i<sub>2</sub>.last + 1</em>) If this is the case, then the expression&#8217;s total range is uninterrupted and can be used to check that the loop&#8217;s outputs are covered.</p>
+<div class="ulist">
+<ul>
+<li>
+<p>As a condition of the loop, all output expressions must have disjoint total-ranges, but their union must be equal to the loop&#8217;s output.</p>
+</li>
+</ul>
+</div>
+</dd>
+<dt class="hdlist1">The <em>output</em> expression may depend only on the local loop iterator.</dt>
+<dd>
+<p>If the loop itself is repeated by an outer loop, then outputs may be remapped correctly in one iteration and incorrectly in another iteration.
+Non-dependence on surrounding loop-iterators eliminates that possibility.</p>
+</dd>
+<dt class="hdlist1">The <em>input</em> expression&#8217;s total range must be assigned before the loop.</dt>
+<dd>
+<p>When the expression&#8217;s total range is assigned prior to the loop, well-formedness can be checked in the <em>assigned</em> and <em>deleted SkipLists</em>.</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Failing this, the <em>input</em> expression&#8217;s total range must intersect with some <em>output</em> expressions ranges.
+Both the <em>input</em> expression and the <em>output</em> expressions must be soft unrolled.</p>
+</li>
+</ul>
+</div>
+</dd>
+</dl>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+An interesting side-effect of checking all these conditions is that they indicate that each iteration of the loop is independent of the others.
+That means that the loop could be parallelized or batch-amortized (however, as-built BOLT is definitely <strong>not</strong> thread-safe).
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect3">
+<h4 id="cutting-corners-on-sequential-loops">Cutting Corners on "Sequential" Loops</h4>
+<div class="paragraph">
+<p>The last condition of shortcut processing (that <em>input</em> expressions' total ranges must be preassigned) excludes a large class of "sequential" loops which could otherwise shortcut.
+In a "sequential" loop, an input expression follows closely behind an output wire, meaning that while it isn&#8217;t <em>pre</em>assigned, it is assigned before use.
+These forms can be detected when an <em>input</em> expression&#8217;s total range overlaps an existing <em>output</em> expression&#8217;s total range.
+In this case, the following additional conditions allow us to continue shortcut processing rather than soft unrolling.</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">The <em>input</em> expression must depend only on the local iterator.</dt>
+<dd>
+<p>This mirrors the condition of an <em>output</em> expression and assures consistent behavior across iterations of an outer loop.</p>
+</dd>
+<dt class="hdlist1">The difference between evaluations of <em>output</em> and <em>input</em> expressions at the loop bounds must be the same.</dt>
+<dd>
+<p>This ensures that both expressions have the same "total span", meaning that one won&#8217;t advance ahead of the other (because we already know that the expressions are linear and have constant span).</p>
+</dd>
+<dt class="hdlist1">The <em>output</em> and <em>input</em> expressions must "travel" in the same direction</dt>
+<dd>
+<p>If the expressions were to "travel" in opposite directions, then the <em>input</em> expression would be unassigned until the expressions "crossed their midpoint".</p>
+</dd>
+<dt class="hdlist1">There must exist a difference between the <em>input</em> and <em>output</em> expression&#8217;s total ranges which is assigned before the loop, and which covers the span of the first iteration of the <em>input</em> expression.</dt>
+<dd>
+<p>If this preassigned space did not exist, or if it did not cover the first iteration, then the first iteration of the loop would have a poorly formed <em>input</em> expression.</p>
+</dd>
+</dl>
+</div>
+</div>
+<div class="sect3">
+<h4 id="building-the-shortcut-loop">Building the Shortcut Loop</h4>
+<div class="paragraph">
+<p>When these conditions are met BOLT builds a single loop body with special wire ranges to self-update on each iteration.
+The loop&#8217;s body is a single <code>Bolt</code> object (rather than an <code>Invocation</code> or <code>AnonFunction</code> as <code>SwitchStatement</code> does), essentially inlining any named functions.
+This mainly saves on code-complexity, at the occasional expense of memory usage, but it also avoids adding another layer of <code>WireSetWireRangeRef</code>.</p>
+</div>
+<div class="paragraph">
+<p>Each expression is remapped as one of <code>ShortcutLoopIndirectWireRangeRef</code>, <code>ShortcutLoopWireSetWireRangeRef</code>, or, in the case of <em>constant input</em> expressions, remapped as-is.
+<code>ShortcutLoop<em>XX</em>WireRangeRef</code>s have a constant range within the inner-scope of the loop, but reevaluate their expression on each iteration of the loop, redefining an offset into the outer-scope.
+In most cases the inner-scope range can hold a single pointer to a contiguous outer-scope range ("<em>Indirect</em>").
+However, it is possible for an expression to cross between ranges of the outer-scope (say from the input-wires into some local wires), thus a <em>WireSet</em> range must search the entire calling-scope.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="/wizkit-blog/attachments/bolt/UML_shortcut.png" alt="UML shortcut">
+</div>
+<div class="title">Figure 7. UML Diagram for Shortcut Loops. Along the left are the <code>ShortcutLoop<em>XX</em>WireRangeRef</code> types. The <code>Expr</code> type, a simple stack-calculator for updating expressions, is defined in the bottom left corner. The <code>ForLoop</code> directive is defined along the bottom.</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="soft-unrolling-path">Soft Unrolling Path</h4>
+<div class="paragraph">
+<p>Soft unrolling uses some of the same <em>SkipLists</em> from earlier to check the assignment of each wire-range on each loop iteration.
+If any of the expressions being unrolled depend on a non-local iterator, then soft unrolling must check the expression at each iteration of the non-local iterator to assure that the inner-loop is well-formed on every iteration of the outer-loop.
+Soft unrolling must also check for variable sized inputs or outputs, which would cause BOLT to fall back to hard unrolling.</p>
+</div>
+<div class="paragraph">
+<p>When soft unrolling succeeds, a single <code>SoftLoopWireRangeRef</code> is mapped into the sub-scope.
+It holds a vector of <code>Translation</code>s which can be searched to map an inner-scope range to an offset in the outer-scope.
+On each iteration of the loop a <code>Mapping</code> must update each <code>Translation</code>, as the span could change.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="/wizkit-blog/attachments/bolt/UML_soft.png" alt="UML soft">
+</div>
+<div class="title">Figure 8. UML Diagram for soft unrolled loops. In the bottom left quadrant are the <code>SoftLoopWireRangeRef</code> family with <code>Translation</code> which when given an inner-scope index finds the outer-scope index and <code>Mapping</code> which updates the <code>Translation</code>s on each call to <code>update()</code>.</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="hard-unrolling-path">Hard Unrolling Path</h4>
+<div class="paragraph">
+<p>In the hard unrolling path, BOLT falls back to a single-pass interpretation scheme.
+One property this must maintain is that the build phase is expected to catch any relation well-formedness issues.
+For this reason the hard unroll path "pre-executes" the entire loop (repeating for any outer-loops) during the build phase, double-penalizing TA1 for emitting such an obnoxious loop (and myself for allowing such a loop in the IR at all ;-).</p>
+</div>
+<div class="paragraph">
+<p>The main reason that hard unrolling would occur is due to a loop where the output list or input list has non-constant size.
+BOLT cannot handle this because the <code>WireRef</code> cannot cache such a dynamic reference.</p>
+</div>
+<div class="paragraph">
+<p>An example of hard unrolling is the "square loop" example.
+It is a pair of nested loops.
+The inner loop is fairly standard with 100 iterations and assigning its output range in 99, 98 &#8230;&#8203; 0 order.
+The outer loop, however, assigns its 100 outputs in 10 iterations, where each iteration&#8217;s output size increases with the iterator&#8217;s square.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>$0 ... $99 &lt;- @for i @first 0 @last 9
+  // Range is based on square(i), rather than simply i.
+  $(i * i) ... $(((i + 1) * (i + 1)) - 1) &lt;- @anon_call(@instance:0, @short_witness:1)
+    $100 &lt;- @short_witness;
+    // This inner fills some locals and the output list
+    $0 ... $99 &lt;- @for j @first 0 @last 99
+      $(99 - j) &lt;- @anon_call($(100 - j), @instance:0, @short_witness:0)
+        $0 &lt;- @mul($1, $1);
+      @end
+    @end
+  @end
+@end</pre>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="the-expr-stack-calculator">The <code>Expr</code> Stack Calculator</h4>
+<div class="paragraph">
+<p>The <a href="https://github.com/stealthsoftwareinc/wiztoolkit/blob/main/src/main/cpp/wtk/bolt/Expr.cpp#L15"><code>Expr</code> stack calculator</a> updates offsets and mappings in BOLT Loops.
+Although this article has used "expression" to refer to an "expression range" the <code>Expr</code> type implements only one bound of the range (e.g. two are needed to represent the entire range).</p>
+</div>
+<div class="paragraph">
+<p>Initially the <code>Expr.eval()</code> method took nearly 50% of BOLT&#8217;s non-ZK runtime, however we were able to optimize this to about 15% to 20%.
+Here are a few of its optimization tricks:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Passing the stack as a parameter eliminates allocation (faster than even stack-allocation, don&#8217;t ask me why, but C++ doesn&#8217;t like arrays on its stack). This optimization was done to the BOLT Prototype, nearly doubling its speed.</p>
+</li>
+<li>
+<p>"Offset" and "multiple" operations push two parameters to the stack (<code>term.literal</code> and <code>*term.iterator</code>, which were originally union members) before performing either an addition or multiplication. This saves two iterations of the calculator.</p>
+</li>
+<li>
+<p>A common case of the calculator is that it returns after just a single iteration (especially with offset and multiple operations). So we made these a fast-path which skips the stack entirely.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="results">Results</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>We&#8217;re quite pleased with the results from BOLT.
+The full-scale system does manage to improve upon the prototype: in the non-ZK setting it managed 4.3s compared to about 5.2s for the matrix 350 circuit, and I believe this was even with a larger prime.
+But more important are the metrics with a ZK Backend.
+We implemented BOLT&#8217;s callback API using the <a href="https://github.com/emp-toolkit/emp-zk">EMP QuickSilver backend</a>.
+When BOLT&#8217;s evaluate phase reaches each gate, it invokes a method from the from the <a href="https://stealthsoftwareinc.github.io/wiztoolkit/docs/v1.0.1/backends.html#the-backend-api"><code>wtk::bolt::Backend</code></a> abstract class.
+Child classes can override these methods to perform each gate using ZK.</p>
+</div>
+<div class="paragraph">
+<p>For fair comparison with other approaches we developed the single-pass <a href="https://stealthsoftwareinc.github.io/wiztoolkit/docs/v1.0.1/backends.html#invoking-plasmasnooze">"PLASMASnooze" interpreter</a> (a pun on FIREALARM) which shares backend integrations with BOLT.
+We also developed a streaming IR-Simple PLASMASnooze implementation.
+As IR-Simple&#8217;s syntax tree is a flat list, each gate can be processed immediately and then discarded, rather than storing it in a parse tree for later traversal.
+Lastly we also compare with the <a href="https://github.com/emp-toolkit/emp-ir">EMP C++ compiler</a> which translates the IR to C++.
+We&#8217;ve plotted the end to end time (from IR to valid proof) for these approaches using the matrix circuit.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="/wizkit-blog/attachments/bolt/timing_results_matrix.png" alt="timing results matrix">
+</div>
+<div class="title">Figure 9. Matrix Circuit EMP Results (Linear time scale from 0 to 110)</div>
+</div>
+<div class="paragraph">
+<p>As expected, the IR-Loops single-pass (teal with crosses) is far slower than the IR-Simple in streaming mode (purple with plus signs).
+However the BOLT implementation (blue with stars) is 2x faster than streaming and the C++ implementation (orange with squares) is naturally even faster than that.</p>
+</div>
+<div class="paragraph">
+<p>We also tested against the Finite State Machine circuit created by the T&amp;E Team, which tests IR switch statements.
+Unfortunately, we don&#8217;t have an IR-Simple version of this circuit, however we have a few interesting comparisons to make between the IR-Switch FSM circuit and its equivalent after switch statements were converted to multiplex circuits.
+Additionally, the EMP backend can improve upon the Fermat multiplexer by creating and checking an additional witness value.
+Unfortunately, we had issues compiling larger instances of the FSM circuit with EMP C++, due to <code>gcc</code> running out of RAM.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="/wizkit-blog/attachments/bolt/timing_results_fsm.png" alt="timing results fsm">
+</div>
+<div class="title">Figure 10. Finite State Machine EMP Results (Log time scale from 5 to 12,000 seconds)</div>
+</div>
+<div class="paragraph">
+<p>There are a few interesting takeaways from these test cases.
+Most notably, single-pass switch, multi-pass multiplexer, and multi-pass switch are clustered fairly tight (yellow, orange, and green overlaps).
+These all took between 8.4 and 8.8ks on the largest test-case.
+This indicates that in the multi-pass interpreter the <code>@switch</code> directive is only a marginal improvement over a hard-coded multiplexer.
+In the single-pass interpreter, however the <code>@switch</code> directive was extremely effective, going from over 11ks down to about 8.8ks.</p>
+</div>
+<div class="paragraph">
+<p>The most dramatic gain, however, is from replacing the Fermat multiplexer with a witness-checking multiplexer ("EMP-Tricks").
+These improve upon the Fermat multiplexer with an approximately 11x speedup.
+In this case, the largest test case runs in 826s for the single-pass (aqua with stars) and multi-pass (blue with circles) further improves that by about 10% to 748s.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="conclusion">Conclusion</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>We designed and developed the BOLT system after noticing that our compact IR-Loop circuits were much slower than their flat/non-uniform equivalents.
+We wanted to understand and avoid this slowdown.
+The BOLT system accomplished this goal, helping us understand how time was being spent between ZK gates.
+In the process, we managed to improve significantly upon flat circuits.
+Overall, we hope that following along with our BOLT development has given the reader an appreciation for the overhead spent between ZK gates and some insight into optimizing both ZK circuits and backends.</p>
+</div>
+<div class="paragraph">
+<p>If you&#8217;re interested in using BOLT to speed up your own ZK backend when using the SIEVE IR, have a look at <a href="https://stealthsoftwareinc.github.io/wiztoolkit/docs/v1.0.1/backends.html">the WizToolKit tutorial for integrating backends</a>.</p>
+</div>
+<div class="sidebarblock">
+<div class="content">
+<div class="paragraph">
+<p>This research was developed with funding from the Defense Advanced Research Projects Agency (DARPA) under Contract No. HR001120C0087.
+The views, opinions, and/or findings expressed are those of the author(s) and should not be interpreted as representing the official views or policies of the Department of Defense or the U.S. Government.</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+  <hr />
+  
+    <nav id="similarContent">
+      <h2 class="eyebrow">Similar Content</h2>
+      <ul>
+      
+        
+          
+            
+              <li>
+                <a href="/wizkit-blog/tag/sieve-ir
+">
+                  Tag: SIEVE IR
+                </a>
+                <ul>
+                
+                  
+                    <li><a href="/wizkit-blog/2022/09/26/evolving-the-sieve-ir-our-concrete-proposal.html">Evolving the SIEVE IR: Our Concrete Proposal</a></li>
+                  
+                
+                  
+                    <li><a href="/wizkit-blog/2022/08/04/getting-started-with-the-ir.html">Getting Started with the SIEVE IR</a></li>
+                  
+                
+                  
+                    <li><a href="/wizkit-blog/2022/05/26/replacing-the-sieve-ir.html">Replacing the SIEVE Intermediate Representation</a></li>
+                  
+                
+                  
+                
+                  
+                    <li><a href="/wizkit-blog/2021/11/01/sieve-ir-v1.0-retrospective.html">SIEVE IR v1.0 Retrospective</a></li>
+                  
+                
+                  
+                    <li><a href="/wizkit-blog/2021/09/20/introducing-the-sieve-ir.html">Introducing the SIEVE Intermediate Representation</a></li>
+                  
+                
+                </ul>
+              </li>
+            
+          
+        
+          
+        
+          
+        
+          
+        
+      
+        
+          
+        
+          
+        
+          
+            
+              <li>
+                <a href="/wizkit-blog/tag/wiztoolkit
+">
+                  Tag: WizToolKit
+                </a>
+                <ul>
+                
+                  
+                    <li><a href="/wizkit-blog/2022/08/04/getting-started-with-the-ir.html">Getting Started with the SIEVE IR</a></li>
+                  
+                
+                  
+                
+                </ul>
+              </li>
+            
+          
+        
+          
+        
+      
+      </ul>
+    </nav>
+    
+</article>
+
+</main>
+
+    <footer>
+      
+        <p id="distributionStatement">
+          <strong>Distribution Statement A:</strong> Approved for Public Release, Distribution Unlimited.
+        </p>
+      
+      <p>
+        Copyright &copy; 2021, Stealth Software Technologies, Inc.
+        All Rights Reserved.
+      </p>
+      
+        <p id="acknowledgement">
+          This research was developed with funding from the Defense Advanced Research Projects Agency (DARPA) under Contract No. HR001120C0087. The views, opinions, and/or findings expressed are those of the author(s) and should not be interpreted as representing the official views or policies of the Department of Defense or the U.S. Government.
+        </p>
+      
+
+      <a href="https://www.stealthsoftwareinc.com" id="bottomLogoImg">
+        <img
+          src="/wizkit-blog/assets/icons/tetra-solid-400x100.png"
+          alt="Stealth Software Technologies Home Page" /></a>
+
+      
+        <nav>
+          <strong>Navigation</strong>
+          
+            <br />
+            <a href="/wizkit-blog/">About</a>
+          
+            <br />
+            <a href="/wizkit-blog/blog.html">Blog</a>
+          
+            <br />
+            <a href="mailto:team-wizkit@stealthsoftwareinc.com">Contact</a>
+          
+        </nav>
+      
+    </footer>
+  </body>
+</html>
+

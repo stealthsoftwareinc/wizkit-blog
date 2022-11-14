@@ -1,0 +1,5 @@
+Relation,        Size (Gates), Parse (Simple), Parse (Loops), FIREALARM (Simple), FIREALARM (Loops), BOLT Build (Simple), BOLT Build (Loops), BOLT Evaluate (Simple), BOLT Evaluate (Loops), Phase II Goals, Phase III Goals
+"matrix prod 50",  252500,       50,           14,            16,                 103,               31,                  11,                 3,                      15,                    252.5,          25.25
+"matrix prod 150", 6772500,      543,          12,            443,                2678,              453,                 13,                 73,                     434,                   6772.5,         677.25
+"matrix prod 250", 31312500,     2033,         12,            1657,               12407,             2158,                17,                 339,                    2047,                  31312.5,        3131.25
+"matrix prod 350", 85872500,     5673,         14,            4751,               33894,             5673,                25,                 921,                    5193,                  85872.5,        8587.25

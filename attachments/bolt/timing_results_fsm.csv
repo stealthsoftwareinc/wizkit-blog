@@ -1,0 +1,5 @@
+Relation,         Single-Pass IR Mux, Single-Pass IR Switch, Single-Pass IR Switch w/ EMP Tricks, Multi-Pass IR Mux,   Multi-Pass IR Switch, Multi-Pass IR switch w/ EMP Tricks
+FSM 100 50 200,   33.343,             21.575,                5.246,                               20.443,              20.044,               4.956
+FSM 200 100 400,  251.717,            139.561,               15.964,                              138.017,             134.318,              14.479
+FSM 400 200 800,  1522.057,           1105.568,              105.046,                             1086.297,            1079.416,             92.234
+FSM 800 400 1600, 11364.766,          8811.117,              826.814,                             8761.003,            8433.675,             747.978
