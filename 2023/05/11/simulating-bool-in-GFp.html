@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Simulating Boolean Computations with GF(p) Circuits - Team Wizkit</title>
+    <link rel="stylesheet"
+        href="/wizkit-blog/assets/css/fonts.css" />
+    <link rel="stylesheet"
+        href="/wizkit-blog/assets/css/layout.css" />
+    <link rel="stylesheet"
+        href="/wizkit-blog/assets/css/content.css" />
+
+    <link rel="shortcut icon" type="image/png"
+        href="/wizkit-blog/assets/icons/tetra-solid-32x32.png" />
+
+    <link type="application/atom+xml" rel="alternate" href="https://stealthsoftwareinc.github.io/wizkit-blog/feed.xml" title="Team Wizkit" />
+    <!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Simulating Boolean Computations with GF(p) Circuits | Team Wizkit</title>
+<meta name="generator" content="Jekyll v4.2.2" />
+<meta property="og:title" content="Simulating Boolean Computations with GF(p) Circuits" />
+<meta name="author" content="Kimberlee Model" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="In ZK Proofs it is difficult to compute some common operations because the typical GF(p) operations only allow two useful operations: addition and multiplication. From these two simple operations, many others can be built, but many others cannot. For example, exact equality or inequality can take advantage of Fermat&#8217;s Little Theorem, and from this we can build multiplexers to implement conditionals. But comparative inequalities (less than, greater than, etc) are still impossible without further work. In this post we&#8217;ll start by simulating Boolean logic in GF(p), then build up to comparison operations, and show how we can use these to simulate integer division." />
+<meta property="og:description" content="In ZK Proofs it is difficult to compute some common operations because the typical GF(p) operations only allow two useful operations: addition and multiplication. From these two simple operations, many others can be built, but many others cannot. For example, exact equality or inequality can take advantage of Fermat&#8217;s Little Theorem, and from this we can build multiplexers to implement conditionals. But comparative inequalities (less than, greater than, etc) are still impossible without further work. In this post we&#8217;ll start by simulating Boolean logic in GF(p), then build up to comparison operations, and show how we can use these to simulate integer division." />
+<link rel="canonical" href="https://stealthsoftwareinc.github.io/wizkit-blog/2023/05/11/simulating-bool-in-GFp.html" />
+<meta property="og:url" content="https://stealthsoftwareinc.github.io/wizkit-blog/2023/05/11/simulating-bool-in-GFp.html" />
+<meta property="og:site_name" content="Team Wizkit" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2023-05-11T00:00:00-04:00" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="Simulating Boolean Computations with GF(p) Circuits" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Kimberlee Model"},"dateModified":"2023-05-11T00:00:00-04:00","datePublished":"2023-05-11T00:00:00-04:00","description":"In ZK Proofs it is difficult to compute some common operations because the typical GF(p) operations only allow two useful operations: addition and multiplication. From these two simple operations, many others can be built, but many others cannot. For example, exact equality or inequality can take advantage of Fermat&#8217;s Little Theorem, and from this we can build multiplexers to implement conditionals. But comparative inequalities (less than, greater than, etc) are still impossible without further work. In this post we&#8217;ll start by simulating Boolean logic in GF(p), then build up to comparison operations, and show how we can use these to simulate integer division.","headline":"Simulating Boolean Computations with GF(p) Circuits","mainEntityOfPage":{"@type":"WebPage","@id":"https://stealthsoftwareinc.github.io/wizkit-blog/2023/05/11/simulating-bool-in-GFp.html"},"url":"https://stealthsoftwareinc.github.io/wizkit-blog/2023/05/11/simulating-bool-in-GFp.html"}</script>
+<!-- End Jekyll SEO tag -->
+
+
+    <script>0</script>
+  </head>
+  <body>
+    <header>
+      <nav id="topNav">
+        <a href="#main" id="jumpMain">Jump to Main</a>
+        <a href="https://www.stealthsoftwareinc.com" id="logoImg">
+          <img
+            src="/wizkit-blog/assets/icons/tetra-solid-100x100.png"
+            alt="Stealth Software Technologies Home Page" /></a>
+        <a href="/wizkit-blog/" id="titleLink">Team Wizkit</a>
+        <span id="spacer">&nbsp;</span>
+        
+          
+            <a href="/wizkit-blog/"
+              
+              >about</a>
+          
+        
+          
+            <a href="/wizkit-blog/blog.html"
+              
+              >blog</a>
+          
+        
+      </nav>
+    </header>
+    <main id="main" tabindex="-1">
+  <article>
+  <h1> Simulating Boolean Computations with GF(p) Circuits</h1>
+  <p>
+  <strong>Written:</strong>
+  <time datetime="2023-05-11 00:00:00 -0400">2023-05-11</time>,
+  
+    <strong>Published:</strong>
+    <time datetime="2023-08-30"> 2023-08-30</time>,
+  
+  <strong>Author:</strong> Kimberlee Model,
+  
+    <strong>Tags:</strong>
+    
+      <a href="/wizkit-blog/tag/circuits
+">circuits</a>,
+    
+      <a href="/wizkit-blog/tag/simple-circuits
+">simple circuits</a>,
+    
+  
+</p>
+
+
+  <hr />
+  <div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>In ZK Proofs it is difficult to compute some common operations because the typical <code>GF(p)</code> operations only allow two useful operations: addition and multiplication.
+From these two simple operations, many others can be built, but many others cannot.
+For example, exact equality or inequality can take advantage of <a href="https://en.wikipedia.org/wiki/Fermat%27s_little_theorem">Fermat&#8217;s Little Theorem</a>, and from this we can build multiplexers to implement conditionals.
+But comparative inequalities (less than, greater than, etc) are still impossible without further work.
+In this post we&#8217;ll start by simulating Boolean logic in <code>GF(p)</code>, then build up to comparison operations, and show how we can use these to simulate integer division.</p>
+</div>
+<div class="paragraph">
+<p>To read this post you should be familiar with prime-modulus finite fields (<code>GF(p)</code>), Boolean arithmetic, and with Zero Knowledge Proofs as a concept.
+I&#8217;ll also use snippets of C code for demonstration, along with truth-tables.
+In C code, I&#8217;ll use <code>unsigned int</code> and show modular operations with <code>(expr) % P</code>.</p>
+</div>
+<div class="paragraph">
+<p>Throughout this example we&#8217;ll use the prime <code>101</code>, and we know that its bit-width is <code>7</code>.
+We&#8217;ll also use big-end first bit vectors, where relevant.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="c"><span></span><span class="tok-k">const</span><span class="tok-w"> </span><span class="tok-kt">unsigned</span><span class="tok-w"> </span><span class="tok-kt">int</span><span class="tok-w"> </span><span class="tok-n">P</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-mi">101</span><span class="tok-p">;</span>
+<span class="tok-k">const</span><span class="tok-w"> </span><span class="tok-kt">unsigned</span><span class="tok-w"> </span><span class="tok-kt">int</span><span class="tok-w"> </span><span class="tok-n">P_WIDTH</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-mi">7</span><span class="tok-p">;</span></code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="simulated-boolean-basics">Simulated Boolean Basics</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>To simulate Booleans we want values in <code>GF(p)</code>, but we want to constrain them such that they only ever equal <code>0</code> or <code>1</code>.
+In ZK, it is easy to check that a value is equal to zero (for example with the SIEVE IR <code>@assert_zero</code> directive).
+We can take advantage of this to make a simple test proving to the verifier that a value is in fact a Boolean value.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="c"><span></span><span class="tok-kt">void</span><span class="tok-w"> </span><span class="tok-nf">assert_boolean</span><span class="tok-p">(</span><span class="tok-kt">unsigned</span><span class="tok-w"> </span><span class="tok-kt">int</span><span class="tok-w"> </span><span class="tok-n">v</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-p">{</span>
+<span class="tok-w">  </span><span class="tok-n">assert</span><span class="tok-p">(</span><span class="tok-mi">0</span><span class="tok-w"> </span><span class="tok-o">==</span><span class="tok-w"> </span><span class="tok-p">(</span><span class="tok-n">v</span><span class="tok-w"> </span><span class="tok-o">*</span><span class="tok-w"> </span><span class="tok-p">(</span><span class="tok-n">v</span><span class="tok-w"> </span><span class="tok-o">-</span><span class="tok-w"> </span><span class="tok-mi">1</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">%</span><span class="tok-w"> </span><span class="tok-n">P</span><span class="tok-p">));</span>
+<span class="tok-p">}</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>When <code>v == 0</code>, this multiplies out as <code>0</code>, and when <code>v == 1</code> then <code>v - 1</code> multiplies out to <code>0</code>.
+For any other value of <code>v</code>, it multiplies out to something non-zero.</p>
+</div>
+<div class="paragraph">
+<p>Next we want some simple Boolean operations <code>and</code>, <code>or</code>, <code>xor</code>, etc.
+<code>and</code> is the simplest because it is just multiplication.</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 25%;">
+<col style="width: 25%;">
+<col style="width: 25%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top"><code>l</code></th>
+<th class="tableblock halign-left valign-top"><code>r</code></th>
+<th class="tableblock halign-left valign-top"><code>l &amp;&amp; r</code></th>
+<th class="tableblock halign-left valign-top"><code>l * r</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>0</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>0</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>0</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>0</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>0</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>1</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>0</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>0</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>1</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>0</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>0</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>0</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>1</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>1</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>1</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>1</code></p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>So we can make a simple function for Boolean and.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="c"><span></span><span class="tok-kt">unsigned</span><span class="tok-w"> </span><span class="tok-kt">int</span><span class="tok-w"> </span><span class="tok-nf">bool_and</span><span class="tok-p">(</span><span class="tok-kt">unsigned</span><span class="tok-w"> </span><span class="tok-kt">int</span><span class="tok-w"> </span><span class="tok-n">l</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-kt">unsigned</span><span class="tok-w"> </span><span class="tok-kt">int</span><span class="tok-w"> </span><span class="tok-n">r</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-p">{</span>
+<span class="tok-w">  </span><span class="tok-k">return</span><span class="tok-w"> </span><span class="tok-p">(</span><span class="tok-n">l</span><span class="tok-w"> </span><span class="tok-o">*</span><span class="tok-w"> </span><span class="tok-n">r</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">%</span><span class="tok-w"> </span><span class="tok-n">P</span><span class="tok-p">;</span>
+<span class="tok-p">}</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p><code>or</code> and <code>xor</code> (inclusive and exclusive or) are a bit trickier.
+Addition is a good first try, but it produces <code>2</code> in the case where both operands are <code>1</code>.</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 25%;">
+<col style="width: 25%;">
+<col style="width: 25%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top"><code>l</code></th>
+<th class="tableblock halign-left valign-top"><code>r</code></th>
+<th class="tableblock halign-left valign-top"><code>l || r</code></th>
+<th class="tableblock halign-left valign-top"><code>l + r</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>0</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>0</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>0</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>0</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>0</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>1</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>1</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>1</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>1</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>0</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>1</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>1</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>1</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>1</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>1</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>2</code> BAD</p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>The next try is to notice that we already know that last case from <code>and</code>, so we can get rid of it by subtraction.
+For <code>or</code> we subtract once, and <code>xor</code> we subtract twice.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="c"><span></span><span class="tok-k">const</span><span class="tok-w"> </span><span class="tok-kt">unsigned</span><span class="tok-w"> </span><span class="tok-kt">int</span><span class="tok-w"> </span><span class="tok-n">NEG1</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-p">(</span><span class="tok-n">P</span><span class="tok-w"> </span><span class="tok-o">-</span><span class="tok-w"> </span><span class="tok-mi">1</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">%</span><span class="tok-w"> </span><span class="tok-n">P</span><span class="tok-p">;</span>
+
+<span class="tok-kt">unsigned</span><span class="tok-w"> </span><span class="tok-kt">int</span><span class="tok-w"> </span><span class="tok-nf">bool_or</span><span class="tok-p">(</span><span class="tok-kt">unsigned</span><span class="tok-w"> </span><span class="tok-kt">int</span><span class="tok-w"> </span><span class="tok-n">l</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-kt">unsigned</span><span class="tok-w"> </span><span class="tok-kt">int</span><span class="tok-w"> </span><span class="tok-n">r</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-p">{</span>
+<span class="tok-w">  </span><span class="tok-k">return</span><span class="tok-w"> </span><span class="tok-p">((</span><span class="tok-n">l</span><span class="tok-w"> </span><span class="tok-o">+</span><span class="tok-w"> </span><span class="tok-n">r</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">%</span><span class="tok-w"> </span><span class="tok-n">P</span><span class="tok-w"> </span><span class="tok-o">+</span><span class="tok-w"> </span><span class="tok-p">(</span><span class="tok-n">NEG1</span><span class="tok-w"> </span><span class="tok-o">*</span><span class="tok-w"> </span><span class="tok-p">(</span><span class="tok-n">l</span><span class="tok-w"> </span><span class="tok-o">*</span><span class="tok-w"> </span><span class="tok-n">r</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">%</span><span class="tok-w"> </span><span class="tok-n">P</span><span class="tok-p">))</span><span class="tok-w"> </span><span class="tok-o">%</span><span class="tok-w"> </span><span class="tok-n">P</span><span class="tok-p">;</span>
+<span class="tok-p">}</span>
+
+<span class="tok-k">const</span><span class="tok-w"> </span><span class="tok-kt">unsigned</span><span class="tok-w"> </span><span class="tok-kt">int</span><span class="tok-w"> </span><span class="tok-n">NEG2</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-p">(</span><span class="tok-n">NEG1</span><span class="tok-w"> </span><span class="tok-o">*</span><span class="tok-w"> </span><span class="tok-mi">2</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">%</span><span class="tok-w"> </span><span class="tok-n">P</span><span class="tok-p">;</span>
+
+<span class="tok-kt">unsigned</span><span class="tok-w"> </span><span class="tok-kt">int</span><span class="tok-w"> </span><span class="tok-nf">bool_xor</span><span class="tok-p">(</span><span class="tok-kt">unsigned</span><span class="tok-w"> </span><span class="tok-kt">int</span><span class="tok-w"> </span><span class="tok-n">l</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-kt">unsigned</span><span class="tok-w"> </span><span class="tok-kt">int</span><span class="tok-w"> </span><span class="tok-n">r</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-p">{</span>
+<span class="tok-w">  </span><span class="tok-k">return</span><span class="tok-w"> </span><span class="tok-p">((</span><span class="tok-n">l</span><span class="tok-w"> </span><span class="tok-o">+</span><span class="tok-w"> </span><span class="tok-n">r</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">%</span><span class="tok-w"> </span><span class="tok-n">P</span><span class="tok-w"> </span><span class="tok-o">+</span><span class="tok-w"> </span><span class="tok-p">(</span><span class="tok-n">NEG2</span><span class="tok-w"> </span><span class="tok-o">*</span><span class="tok-w"> </span><span class="tok-p">(</span><span class="tok-n">l</span><span class="tok-w"> </span><span class="tok-o">*</span><span class="tok-w"> </span><span class="tok-n">r</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">%</span><span class="tok-w"> </span><span class="tok-n">P</span><span class="tok-p">))</span><span class="tok-w"> </span><span class="tok-o">%</span><span class="tok-w"> </span><span class="tok-n">P</span><span class="tok-p">;</span>
+<span class="tok-p">}</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Now we get the truth tables we want.</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 25%;">
+<col style="width: 25%;">
+<col style="width: 25%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top"><code>l</code></th>
+<th class="tableblock halign-left valign-top"><code>r</code></th>
+<th class="tableblock halign-left valign-top"><code>bool_or(l, r)</code></th>
+<th class="tableblock halign-left valign-top"><code>bool_xor(l, r)</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>0</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>0</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>0</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>0</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>0</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>1</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>1</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>1</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>1</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>0</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>1</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>1</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>1</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>1</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>1</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>0</code></p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>Lastly, the obvious implementation of <code>not</code> would be to <code>xor</code> by <code>1</code>.
+But a colleague showed me a trick where you multiply by <code>-1</code> and then add 1.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="c"><span></span><span class="tok-kt">unsigned</span><span class="tok-w"> </span><span class="tok-kt">int</span><span class="tok-w"> </span><span class="tok-nf">bool_not</span><span class="tok-p">(</span><span class="tok-kt">unsigned</span><span class="tok-w"> </span><span class="tok-kt">int</span><span class="tok-w"> </span><span class="tok-n">v</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-p">{</span>
+<span class="tok-w">  </span><span class="tok-k">return</span><span class="tok-w"> </span><span class="tok-p">((</span><span class="tok-n">v</span><span class="tok-w"> </span><span class="tok-o">*</span><span class="tok-w"> </span><span class="tok-n">NEG1</span><span class="tok-w"> </span><span class="tok-o">%</span><span class="tok-w"> </span><span class="tok-n">P</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">+</span><span class="tok-w"> </span><span class="tok-mi">1</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">%</span><span class="tok-w"> </span><span class="tok-n">P</span><span class="tok-p">;</span>
+<span class="tok-p">}</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Unfortunately, every Boolean gate now costs a multiplication, instead of the "free xor" most ZK practitioners are accustomed to from legitimate Boolean ZK.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="bit-decomposition">Bit Decomposition</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Bit decomposition takes an arithmetic value, and produces bits, such that the total of all bits multiplied by their place all add back up to the original value.
+In general there will be <code>ceiling(log_2(P))</code> many bits for any field element <code>v</code>.
+In plaintext, the prover&#8201;&#8212;&#8201;who knows all the values in the circuit&#8201;&#8212;&#8201;can decompose to bits as follows.
+Then the prover can insert the bits as witness values into a circuit.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="c"><span></span><span class="tok-kt">unsigned</span><span class="tok-w"> </span><span class="tok-kt">int</span><span class="tok-w"> </span><span class="tok-n">value</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-cm">/* value to be decomposed */</span><span class="tok-p">;</span>
+
+<span class="tok-kt">unsigned</span><span class="tok-w"> </span><span class="tok-kt">int</span><span class="tok-w"> </span><span class="tok-n">bits</span><span class="tok-p">[</span><span class="tok-n">P_WIDTH</span><span class="tok-p">];</span>
+
+<span class="tok-kt">unsigned</span><span class="tok-w"> </span><span class="tok-kt">int</span><span class="tok-w"> </span><span class="tok-n">val_cpy</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">value</span><span class="tok-p">;</span>
+<span class="tok-k">for</span><span class="tok-p">(</span><span class="tok-kt">size_t</span><span class="tok-w"> </span><span class="tok-n">i</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-mi">1</span><span class="tok-p">;</span><span class="tok-w"> </span><span class="tok-n">i</span><span class="tok-w"> </span><span class="tok-o">&lt;=</span><span class="tok-w"> </span><span class="tok-n">P_WIDTH</span><span class="tok-p">;</span><span class="tok-w"> </span><span class="tok-n">i</span><span class="tok-o">++</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-p">{</span>
+<span class="tok-w">  </span><span class="tok-n">bits</span><span class="tok-p">[</span><span class="tok-n">P_WIDTH</span><span class="tok-w"> </span><span class="tok-o">-</span><span class="tok-w"> </span><span class="tok-n">i</span><span class="tok-p">]</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">val_cpy</span><span class="tok-w"> </span><span class="tok-o">&amp;</span><span class="tok-w"> </span><span class="tok-mi">1</span><span class="tok-p">;</span>
+<span class="tok-w">  </span><span class="tok-n">val_cpy</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">val_cpy</span><span class="tok-w"> </span><span class="tok-o">&gt;&gt;</span><span class="tok-w"> </span><span class="tok-mi">1</span><span class="tok-p">;</span>
+<span class="tok-p">}</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Of course the verifier isn&#8217;t about to believe that the prover got those all correct, so the prover needs to convince the verifier of the following three conditions.</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Each bit is in fact a bit (Perhaps with the prior defined <code>assert_boolean</code> function)</p>
+</li>
+<li>
+<p>The bits add up to the original value</p>
+</li>
+<li>
+<p>And that the prover hasn&#8217;t exploited overflow with a value between <code>P</code> and <code>pow(2, P_WIDTH)</code></p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>The first two are easy to show using existing ZK functionality, as shown in the following snippet.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="c"><span></span><span class="tok-kt">unsigned</span><span class="tok-w"> </span><span class="tok-kt">int</span><span class="tok-w"> </span><span class="tok-n">recomp</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">bits</span><span class="tok-p">[</span><span class="tok-mi">0</span><span class="tok-p">];</span>
+<span class="tok-n">assert_boolean</span><span class="tok-p">(</span><span class="tok-n">bits</span><span class="tok-p">[</span><span class="tok-mi">0</span><span class="tok-p">]);</span>
+
+<span class="tok-k">for</span><span class="tok-p">(</span><span class="tok-kt">size_t</span><span class="tok-w"> </span><span class="tok-n">i</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-mi">1</span><span class="tok-p">;</span><span class="tok-w"> </span><span class="tok-n">i</span><span class="tok-w"> </span><span class="tok-o">&lt;</span><span class="tok-w"> </span><span class="tok-n">P_WIDTH</span><span class="tok-p">;</span><span class="tok-w"> </span><span class="tok-n">i</span><span class="tok-o">++</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-p">{</span>
+<span class="tok-w">  </span><span class="tok-n">assert_boolean</span><span class="tok-p">(</span><span class="tok-n">bits</span><span class="tok-p">[</span><span class="tok-n">i</span><span class="tok-p">]);</span>
+
+<span class="tok-w">  </span><span class="tok-n">recomp</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-p">((</span><span class="tok-n">recomp</span><span class="tok-w"> </span><span class="tok-o">*</span><span class="tok-w"> </span><span class="tok-mi">2</span><span class="tok-w"> </span><span class="tok-o">%</span><span class="tok-w"> </span><span class="tok-n">P</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">+</span><span class="tok-w"> </span><span class="tok-n">bits</span><span class="tok-p">[</span><span class="tok-n">i</span><span class="tok-p">])</span><span class="tok-w"> </span><span class="tok-o">%</span><span class="tok-w"> </span><span class="tok-n">P</span><span class="tok-p">;</span>
+<span class="tok-p">}</span>
+
+<span class="tok-n">assert</span><span class="tok-p">(</span><span class="tok-mi">0</span><span class="tok-w"> </span><span class="tok-o">==</span><span class="tok-w"> </span><span class="tok-p">(</span><span class="tok-n">value</span><span class="tok-w"> </span><span class="tok-o">+</span><span class="tok-w"> </span><span class="tok-p">(</span><span class="tok-n">recomp</span><span class="tok-w"> </span><span class="tok-o">*</span><span class="tok-w"> </span><span class="tok-n">NEG1</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">%</span><span class="tok-w"> </span><span class="tok-n">P</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">%</span><span class="tok-w"> </span><span class="tok-n">P</span><span class="tok-p">);</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Proving that overflow has not been exploited will require a less-than comparison.
+A decomposition of <code>P</code> can be provided in the instance&#8201;&#8212;&#8201;known to both prover and verifier&#8201;&#8212;&#8201;so that a verifiable decomposition is known to the verifier.
+The next section will show the actual implementation of a less than circuit.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="c"><span></span><span class="tok-kt">unsigned</span><span class="tok-w"> </span><span class="tok-kt">int</span><span class="tok-w"> </span><span class="tok-n">prime_bits</span><span class="tok-p">[</span><span class="tok-n">P_WIDTH</span><span class="tok-p">]</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-cm">/* verifier already knows this */</span><span class="tok-p">;</span>
+<span class="tok-n">assert</span><span class="tok-p">(</span><span class="tok-mi">0</span><span class="tok-w"> </span><span class="tok-o">==</span><span class="tok-w"> </span><span class="tok-n">less_than_bits</span><span class="tok-p">(</span><span class="tok-n">prime_bits</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">bits</span><span class="tok-p">));</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>To better understand why this comparison is necessary, consider the case where the prover attempts to cheat by fudging the decomposition, inserting decomposition of a number greater than <code>P</code> when possible.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="c"><span></span><span class="tok-n">val_cpy</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">value</span><span class="tok-p">;</span>
+<span class="tok-k">if</span><span class="tok-p">(</span><span class="tok-n">val_cpy</span><span class="tok-w"> </span><span class="tok-o">&lt;</span><span class="tok-w"> </span><span class="tok-p">(</span><span class="tok-mi">1</span><span class="tok-w"> </span><span class="tok-o">&lt;&lt;</span><span class="tok-w"> </span><span class="tok-n">P_WIDTH</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">-</span><span class="tok-w"> </span><span class="tok-mi">1</span><span class="tok-w"> </span><span class="tok-o">-</span><span class="tok-w"> </span><span class="tok-n">P</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"> </span><span class="tok-n">val_cpy</span><span class="tok-w"> </span><span class="tok-o">+=</span><span class="tok-w"> </span><span class="tok-n">P</span><span class="tok-p">;</span><span class="tok-w"> </span><span class="tok-p">}</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>In this case, the recomposition&#8201;&#8212;&#8201;modulo <code>P</code>&#8201;&#8212;&#8201;would add up to the original value, but comparisons could be switched because the decomposition bits represents a much larger integer than they should.
+The only way to prevent this is with the extra comparison to <code>P</code>'s decomposition, which the verifier already knows.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="comparison-circuits">Comparison Circuits</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Comparing two bits has a fairly simple truth table.</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 20%;">
+<col style="width: 20%;">
+<col style="width: 20%;">
+<col style="width: 20%;">
+<col style="width: 20%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top"><code>l</code></th>
+<th class="tableblock halign-left valign-top"><code>r</code></th>
+<th class="tableblock halign-left valign-top"><code>l == r</code></th>
+<th class="tableblock halign-left valign-top"><code>l &lt; r</code></th>
+<th class="tableblock halign-left valign-top"><code>l &#8656; r</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>0</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>0</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>1</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>0</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>1</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>0</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>1</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>0</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>1</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>1</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>1</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>0</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>0</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>0</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>0</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>1</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>1</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>1</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>0</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>1</code></p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>For equality we get <code>(l &amp;&amp; r) || (!l &amp;&amp; !r)</code>, but a careful examination will show us that the truth table is the opposite of <code>xor</code>, cutting us down to just 2 multiplications.
+For strict less than, we get <code>!l &amp;&amp; r</code>, also just two multiplications.
+For less than or equal, because strict less than and equal share no common rows in the truth-table a simple <code>add</code> will suffice to combine them.
+But even better, since a number is composed of many bits, we can postpone this add until each bit has been combined with its neighbors.</p>
+</div>
+<div class="paragraph">
+<p>To combine them we&#8217;ll look at the truth table for "previous bits' equality", <code>p</code>, along with <code>l &lt; r</code>.</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 25%;">
+<col style="width: 25%;">
+<col style="width: 25%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top"><code>p</code></th>
+<th class="tableblock halign-left valign-top"><code>l</code></th>
+<th class="tableblock halign-left valign-top"><code>r</code></th>
+<th class="tableblock halign-left valign-top"><code>p &amp;&amp; (l &lt; r)</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>0</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>0</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>0</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>0</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>0</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>0</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>1</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>0</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>0</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>1</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>0</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>0</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>0</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>1</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>1</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>0</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>1</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>0</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>0</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>0</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>1</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>0</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>1</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>1</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>1</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>1</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>0</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>0</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>1</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>1</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>1</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>0</code></p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>What we&#8217;ve done here is <code>and</code> the less than comparator with a bit indicating if all prior bits were equal.
+If a higher placed bit were inequal, then that value should take priority.</p>
+</div>
+<div class="paragraph">
+<p>We can combine all these truth tables into a simple comparison function.
+Again, when combining prior comparisons we can use addition in place of an <code>or</code>, as we know that if a higher placed bit were inequal, then this comparison will be <code>0</code>.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="c"><span></span><span class="tok-kt">unsigned</span><span class="tok-w"> </span><span class="tok-kt">int</span><span class="tok-w"> </span><span class="tok-nf">bits_less_than</span><span class="tok-p">(</span>
+<span class="tok-w">    </span><span class="tok-k">const</span><span class="tok-w"> </span><span class="tok-kt">unsigned</span><span class="tok-w"> </span><span class="tok-kt">int</span><span class="tok-w"> </span><span class="tok-n">l_bits</span><span class="tok-p">[</span><span class="tok-n">P_WIDTH</span><span class="tok-p">],</span><span class="tok-w"> </span><span class="tok-k">const</span><span class="tok-w"> </span><span class="tok-kt">unsigned</span><span class="tok-w"> </span><span class="tok-kt">int</span><span class="tok-w"> </span><span class="tok-n">r_bits</span><span class="tok-p">[</span><span class="tok-n">P_WIDTH</span><span class="tok-p">])</span>
+<span class="tok-p">{</span>
+<span class="tok-w">  </span><span class="tok-kt">unsigned</span><span class="tok-w"> </span><span class="tok-kt">int</span><span class="tok-w"> </span><span class="tok-n">lt</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">bool_and</span><span class="tok-p">(</span><span class="tok-n">bool_not</span><span class="tok-p">(</span><span class="tok-n">l_bits</span><span class="tok-p">[</span><span class="tok-mi">0</span><span class="tok-p">]),</span><span class="tok-w"> </span><span class="tok-n">r_bits</span><span class="tok-p">[</span><span class="tok-mi">0</span><span class="tok-p">]);</span>
+<span class="tok-w">  </span><span class="tok-kt">unsigned</span><span class="tok-w"> </span><span class="tok-kt">int</span><span class="tok-w"> </span><span class="tok-n">p</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">bool_not</span><span class="tok-p">(</span><span class="tok-n">bool_xor</span><span class="tok-p">(</span><span class="tok-n">l_bits</span><span class="tok-p">[</span><span class="tok-mi">0</span><span class="tok-p">],</span><span class="tok-w"> </span><span class="tok-n">r_bits</span><span class="tok-p">[</span><span class="tok-mi">0</span><span class="tok-p">]));</span>
+
+<span class="tok-w">  </span><span class="tok-k">for</span><span class="tok-p">(</span><span class="tok-kt">size_t</span><span class="tok-w"> </span><span class="tok-n">i</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-mi">1</span><span class="tok-p">;</span><span class="tok-w"> </span><span class="tok-n">i</span><span class="tok-w"> </span><span class="tok-o">&lt;</span><span class="tok-w"> </span><span class="tok-n">P_WIDTH</span><span class="tok-w"> </span><span class="tok-o">-</span><span class="tok-w"> </span><span class="tok-mi">1</span><span class="tok-p">;</span><span class="tok-w"> </span><span class="tok-n">i</span><span class="tok-o">++</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-p">{</span>
+<span class="tok-w">    </span><span class="tok-kt">unsigned</span><span class="tok-w"> </span><span class="tok-kt">int</span><span class="tok-w"> </span><span class="tok-n">tmp_lt</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">bool_and</span><span class="tok-p">(</span><span class="tok-n">bool_not</span><span class="tok-p">(</span><span class="tok-n">l_bits</span><span class="tok-p">[</span><span class="tok-n">i</span><span class="tok-p">]),</span><span class="tok-w"> </span><span class="tok-n">r_bits</span><span class="tok-p">[</span><span class="tok-n">i</span><span class="tok-p">]);</span>
+<span class="tok-w">    </span><span class="tok-n">lt</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-p">(</span><span class="tok-n">bool_and</span><span class="tok-p">(</span><span class="tok-n">p</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">tmp_lt</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">+</span><span class="tok-w"> </span><span class="tok-n">lt</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">%</span><span class="tok-w"> </span><span class="tok-n">P</span><span class="tok-p">;</span>
+
+<span class="tok-w">    </span><span class="tok-n">p</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">bool_and</span><span class="tok-p">(</span><span class="tok-n">p</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">bool_not</span><span class="tok-p">(</span><span class="tok-n">bool_xor</span><span class="tok-p">(</span><span class="tok-n">l_bits</span><span class="tok-p">[</span><span class="tok-n">i</span><span class="tok-p">],</span><span class="tok-w"> </span><span class="tok-n">r_bits</span><span class="tok-p">[</span><span class="tok-n">i</span><span class="tok-p">])));</span>
+<span class="tok-w">  </span><span class="tok-p">}</span>
+
+<span class="tok-w">  </span><span class="tok-k">return</span><span class="tok-w"> </span><span class="tok-p">(</span><span class="tok-n">bool_and</span><span class="tok-p">(</span><span class="tok-n">bool_and</span><span class="tok-p">(</span>
+<span class="tok-w">          </span><span class="tok-n">bool_not</span><span class="tok-p">(</span><span class="tok-n">l_bits</span><span class="tok-p">[</span><span class="tok-n">P_WIDTH</span><span class="tok-w"> </span><span class="tok-o">-</span><span class="tok-w"> </span><span class="tok-mi">1</span><span class="tok-p">]),</span><span class="tok-w"> </span><span class="tok-n">r_bits</span><span class="tok-p">[</span><span class="tok-n">P_WIDTH</span><span class="tok-w"> </span><span class="tok-o">-</span><span class="tok-w"> </span><span class="tok-mi">1</span><span class="tok-p">]),</span><span class="tok-w"> </span><span class="tok-n">p</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">+</span><span class="tok-w"> </span><span class="tok-n">lt</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">%</span><span class="tok-w"> </span><span class="tok-n">P</span><span class="tok-p">;</span>
+<span class="tok-p">}</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Less than or equal is a nearly identical function, changing only the last line so that less-than and equality are added together.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="c"><span></span><span class="tok-kt">unsigned</span><span class="tok-w"> </span><span class="tok-kt">int</span><span class="tok-w"> </span><span class="tok-nf">bits_less_than_equal</span><span class="tok-p">(</span>
+<span class="tok-w">    </span><span class="tok-kt">unsigned</span><span class="tok-w"> </span><span class="tok-kt">int</span><span class="tok-w"> </span><span class="tok-k">const</span><span class="tok-w"> </span><span class="tok-n">l_bits</span><span class="tok-p">[</span><span class="tok-n">P_WIDTH</span><span class="tok-p">],</span><span class="tok-w"> </span><span class="tok-kt">unsigned</span><span class="tok-w"> </span><span class="tok-kt">int</span><span class="tok-w"> </span><span class="tok-k">const</span><span class="tok-w"> </span><span class="tok-n">r_bits</span><span class="tok-p">[</span><span class="tok-n">P_WIDTH</span><span class="tok-p">])</span>
+<span class="tok-p">{</span>
+<span class="tok-w">  </span><span class="tok-kt">unsigned</span><span class="tok-w"> </span><span class="tok-kt">int</span><span class="tok-w"> </span><span class="tok-n">lt</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-cm">/* ... */</span><span class="tok-p">;</span>
+<span class="tok-w">  </span><span class="tok-kt">unsigned</span><span class="tok-w"> </span><span class="tok-kt">int</span><span class="tok-w"> </span><span class="tok-n">p</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-cm">/* ... */</span><span class="tok-p">;</span>
+
+<span class="tok-w">  </span><span class="tok-k">for</span><span class="tok-p">(</span><span class="tok-cm">/* ... */</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-p">{</span>
+<span class="tok-w">    </span><span class="tok-cm">/* ... */</span>
+<span class="tok-w">  </span><span class="tok-p">}</span>
+
+<span class="tok-w">  </span><span class="tok-n">lt</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-p">(</span><span class="tok-n">bool_and</span><span class="tok-p">(</span><span class="tok-n">bool_and</span><span class="tok-p">(</span>
+<span class="tok-w">          </span><span class="tok-n">bool_not</span><span class="tok-p">(</span><span class="tok-n">l_bits</span><span class="tok-p">[</span><span class="tok-n">P_WIDTH</span><span class="tok-w"> </span><span class="tok-o">-</span><span class="tok-w"> </span><span class="tok-mi">1</span><span class="tok-p">]),</span><span class="tok-w"> </span><span class="tok-n">r_bits</span><span class="tok-p">[</span><span class="tok-n">P_WIDTH</span><span class="tok-w"> </span><span class="tok-o">-</span><span class="tok-w"> </span><span class="tok-mi">1</span><span class="tok-p">]),</span><span class="tok-w"> </span><span class="tok-n">p</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">+</span><span class="tok-w"> </span><span class="tok-n">lt</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">%</span><span class="tok-w"> </span><span class="tok-n">P</span><span class="tok-p">;</span>
+<span class="tok-w">  </span><span class="tok-k">return</span><span class="tok-w"> </span><span class="tok-p">(</span><span class="tok-n">bool_and</span><span class="tok-p">(</span><span class="tok-n">bool_not</span><span class="tok-p">(</span>
+<span class="tok-w">          </span><span class="tok-n">bool_xor</span><span class="tok-p">(</span><span class="tok-n">l_bits</span><span class="tok-p">[</span><span class="tok-n">P_WIDTH</span><span class="tok-w"> </span><span class="tok-o">-</span><span class="tok-w"> </span><span class="tok-mi">1</span><span class="tok-p">],</span><span class="tok-w"> </span><span class="tok-n">r_bits</span><span class="tok-p">[</span><span class="tok-n">P_WIDTH</span><span class="tok-w"> </span><span class="tok-o">-</span><span class="tok-w"> </span><span class="tok-mi">1</span><span class="tok-p">])),</span><span class="tok-w"> </span><span class="tok-n">p</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">+</span><span class="tok-w"> </span><span class="tok-n">lt</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">%</span><span class="tok-w"> </span><span class="tok-n">P</span><span class="tok-p">;</span>
+<span class="tok-p">}</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Comparing two <code>GF(p)</code> values is now a simple matter of composing bit decomposition with one of our comparators.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="integer-division">Integer Division</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Although integer division "doesn&#8217;t exist" in <code>GF(p)</code>, we can now allow the prover to calculate integer division in clear text and prove its correctness under ZK.
+Given a numerator <code>n</code> and a denominator <code>d</code>, the prover can calculate a quotient <code>q</code> and remainder <code>r</code>.
+Then the prover must prove the following two things</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>n == q*d + r</code></p>
+</li>
+<li>
+<p><code>r &lt; d</code></p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>With a little bit of arithmetic, we can just use one of our recently developed comparison functions.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="c"><span></span><span class="tok-c1">// return quotient, return remainder by pointer</span>
+<span class="tok-kt">unsigned</span><span class="tok-w"> </span><span class="tok-kt">int</span><span class="tok-w"> </span><span class="tok-nf">int_division</span><span class="tok-p">(</span><span class="tok-kt">unsigned</span><span class="tok-w"> </span><span class="tok-kt">int</span><span class="tok-w"> </span><span class="tok-n">n</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-kt">unsigned</span><span class="tok-w"> </span><span class="tok-kt">int</span><span class="tok-w"> </span><span class="tok-n">d</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-kt">unsigned</span><span class="tok-w"> </span><span class="tok-kt">int</span><span class="tok-o">*</span><span class="tok-w"> </span><span class="tok-n">q</span><span class="tok-p">)</span>
+<span class="tok-p">{</span>
+<span class="tok-w">  </span><span class="tok-kt">unsigned</span><span class="tok-w"> </span><span class="tok-kt">int</span><span class="tok-w"> </span><span class="tok-n">q</span><span class="tok-p">;</span>
+
+<span class="tok-w">  </span><span class="tok-k">if</span><span class="tok-p">(</span><span class="tok-n">I_AM_PROVER</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-p">{</span>
+<span class="tok-w">    </span><span class="tok-n">q</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">n</span><span class="tok-w"> </span><span class="tok-o">/</span><span class="tok-w"> </span><span class="tok-n">d</span><span class="tok-p">;</span>
+<span class="tok-w">    </span><span class="tok-o">*</span><span class="tok-n">r</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">n</span><span class="tok-w"> </span><span class="tok-o">%</span><span class="tok-w"> </span><span class="tok-n">d</span><span class="tok-p">;</span>
+<span class="tok-w">  </span><span class="tok-p">}</span>
+
+<span class="tok-w">  </span><span class="tok-n">assert</span><span class="tok-p">(</span><span class="tok-mi">0</span><span class="tok-w"> </span><span class="tok-o">==</span><span class="tok-w"> </span><span class="tok-p">((</span><span class="tok-n">n</span><span class="tok-w"> </span><span class="tok-o">*</span><span class="tok-w"> </span><span class="tok-n">NEG1</span><span class="tok-w"> </span><span class="tok-o">%</span><span class="tok-w"> </span><span class="tok-n">P</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">+</span><span class="tok-w"> </span><span class="tok-p">((</span><span class="tok-n">q</span><span class="tok-w"> </span><span class="tok-o">*</span><span class="tok-w"> </span><span class="tok-n">d</span><span class="tok-w"> </span><span class="tok-o">%</span><span class="tok-w"> </span><span class="tok-n">P</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">+</span><span class="tok-w"> </span><span class="tok-n">r</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">%</span><span class="tok-w"> </span><span class="tok-n">P</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">%</span><span class="tok-w"> </span><span class="tok-n">P</span><span class="tok-p">);</span>
+
+<span class="tok-w">  </span><span class="tok-kt">unsigned</span><span class="tok-w"> </span><span class="tok-kt">int</span><span class="tok-w"> </span><span class="tok-n">r_bits</span><span class="tok-p">[</span><span class="tok-n">P_WIDTH</span><span class="tok-p">];</span>
+<span class="tok-w">  </span><span class="tok-kt">unsigned</span><span class="tok-w"> </span><span class="tok-kt">int</span><span class="tok-w"> </span><span class="tok-n">d_bits</span><span class="tok-p">[</span><span class="tok-n">P_WIDTH</span><span class="tok-p">];</span>
+<span class="tok-w">  </span><span class="tok-n">bit_decompose</span><span class="tok-p">(</span><span class="tok-n">r_bits</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">r</span><span class="tok-p">);</span>
+<span class="tok-w">  </span><span class="tok-n">bit_decompose</span><span class="tok-p">(</span><span class="tok-n">d_bits</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">d</span><span class="tok-p">);</span>
+
+<span class="tok-w">  </span><span class="tok-n">assert</span><span class="tok-p">(</span><span class="tok-mi">0</span><span class="tok-w"> </span><span class="tok-o">==</span><span class="tok-w"> </span><span class="tok-n">bits_less_than_equal</span><span class="tok-p">(</span><span class="tok-n">d_bits</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">r_bits</span><span class="tok-p">));</span>
+
+<span class="tok-w">  </span><span class="tok-k">return</span><span class="tok-w"> </span><span class="tok-n">q</span><span class="tok-p">;</span>
+<span class="tok-p">}</span></code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="conclusion">Conclusion</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>In this post we started out with just <code>GF(p)</code> arithmetic in ZK, and used that to simulate Boolean logic.
+Unfortunately every Boolean gate wound up costing us a multiplication, but we saw a few tricks to occasionally eliminate them.
+Then we decomposed field elements into bits and used the bits to make comparators.
+Lastly, these enabled us to simulate division in <code>GF(p)</code>.
+For convenience, I&#8217;ve attached a <a href="/attachments/bools/samples.c">sample C file</a> with this post&#8217;s example code.</p>
+</div>
+<hr>
+<div class="sidebarblock">
+<div class="content">
+<div class="paragraph">
+<p>This research was developed with funding from the Defense Advanced Research Projects Agency (DARPA) under Contract No. HR001120C0087.
+The views, opinions, and/or findings expressed are those of the author(s) and should not be interpreted as representing the official views or policies of the Department of Defense or the U.S. Government.</p>
+</div>
+<div class="paragraph">
+<p><strong>Distribution Statement "A":</strong> Approved for Public Release, Distribution Unlimited</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+  <hr />
+  
+    <nav id="similarContent">
+      <h2 class="eyebrow">Similar Content</h2>
+      <ul>
+      
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+            
+          
+        
+          
+        
+          
+        
+          
+        
+      
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+            
+          
+        
+          
+        
+          
+        
+      
+      </ul>
+    </nav>
+    
+</article>
+
+</main>
+
+    <footer>
+      
+        <p id="distributionStatement">
+          <strong>Distribution Statement A:</strong> Approved for Public Release, Distribution Unlimited.
+        </p>
+      
+      <p>
+        Copyright &copy; 2023, Stealth Software Technologies, Inc.
+        All Rights Reserved.
+      </p>
+      
+        <p id="acknowledgement">
+          This research was developed with funding from the Defense Advanced Research Projects Agency (DARPA) under Contract No. HR001120C0087. The views, opinions, and/or findings expressed are those of the author(s) and should not be interpreted as representing the official views or policies of the Department of Defense or the U.S. Government.
+        </p>
+      
+
+      <a href="https://www.stealthsoftwareinc.com" id="bottomLogoImg">
+        <img
+          src="/wizkit-blog/assets/icons/tetra-solid-400x100.png"
+          alt="Stealth Software Technologies Home Page" /></a>
+
+      
+        <nav>
+          <strong>Navigation</strong>
+          
+            <br />
+            <a href="/wizkit-blog/">About</a>
+          
+            <br />
+            <a href="/wizkit-blog/blog.html">Blog</a>
+          
+            <br />
+            <a href="mailto:team-wizkit@stealthsoftwareinc.com">Contact</a>
+          
+        </nav>
+      
+    </footer>
+  </body>
+</html>
+

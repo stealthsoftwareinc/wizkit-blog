@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Introducing the SIEVE Circuit-IR: Retrospective - Team Wizkit</title>
+    <link rel="stylesheet"
+        href="/wizkit-blog/assets/css/fonts.css" />
+    <link rel="stylesheet"
+        href="/wizkit-blog/assets/css/layout.css" />
+    <link rel="stylesheet"
+        href="/wizkit-blog/assets/css/content.css" />
+
+    <link rel="shortcut icon" type="image/png"
+        href="/wizkit-blog/assets/icons/tetra-solid-32x32.png" />
+
+    <link type="application/atom+xml" rel="alternate" href="https://stealthsoftwareinc.github.io/wizkit-blog/feed.xml" title="Team Wizkit" />
+    <!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Introducing the SIEVE Circuit-IR: Retrospective | Team Wizkit</title>
+<meta name="generator" content="Jekyll v4.2.2" />
+<meta property="og:title" content="Introducing the SIEVE Circuit-IR: Retrospective" />
+<meta name="author" content="Kimberlee Model" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="In prior posts to this blog, we&#8217;ve certainly aired our grievances with the prior IR release (v1, whereas we&#8217;re now at v2). You may want to go back and skim the previous retrospective and our BOLT fast interpreter. But if you don&#8217;t want to review those, IR1&#8217;s (IR1 was the old IR&#8217;s code name) memory layout was completely disorganized, and some of its higher level features proved difficult (@switch) or slow (@for) to implement. We spent a bit of time developing the BOLT interpreter with a few tricks for greatly accelerating how loops could be processed." />
+<meta property="og:description" content="In prior posts to this blog, we&#8217;ve certainly aired our grievances with the prior IR release (v1, whereas we&#8217;re now at v2). You may want to go back and skim the previous retrospective and our BOLT fast interpreter. But if you don&#8217;t want to review those, IR1&#8217;s (IR1 was the old IR&#8217;s code name) memory layout was completely disorganized, and some of its higher level features proved difficult (@switch) or slow (@for) to implement. We spent a bit of time developing the BOLT interpreter with a few tricks for greatly accelerating how loops could be processed." />
+<link rel="canonical" href="https://stealthsoftwareinc.github.io/wizkit-blog/2023/07/13/sieve-circuit-ir-retrospective.html" />
+<meta property="og:url" content="https://stealthsoftwareinc.github.io/wizkit-blog/2023/07/13/sieve-circuit-ir-retrospective.html" />
+<meta property="og:site_name" content="Team Wizkit" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2023-07-13T00:00:00-04:00" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="Introducing the SIEVE Circuit-IR: Retrospective" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Kimberlee Model"},"dateModified":"2023-07-13T00:00:00-04:00","datePublished":"2023-07-13T00:00:00-04:00","description":"In prior posts to this blog, we&#8217;ve certainly aired our grievances with the prior IR release (v1, whereas we&#8217;re now at v2). You may want to go back and skim the previous retrospective and our BOLT fast interpreter. But if you don&#8217;t want to review those, IR1&#8217;s (IR1 was the old IR&#8217;s code name) memory layout was completely disorganized, and some of its higher level features proved difficult (@switch) or slow (@for) to implement. We spent a bit of time developing the BOLT interpreter with a few tricks for greatly accelerating how loops could be processed.","headline":"Introducing the SIEVE Circuit-IR: Retrospective","mainEntityOfPage":{"@type":"WebPage","@id":"https://stealthsoftwareinc.github.io/wizkit-blog/2023/07/13/sieve-circuit-ir-retrospective.html"},"url":"https://stealthsoftwareinc.github.io/wizkit-blog/2023/07/13/sieve-circuit-ir-retrospective.html"}</script>
+<!-- End Jekyll SEO tag -->
+
+
+    <script>0</script>
+  </head>
+  <body>
+    <header>
+      <nav id="topNav">
+        <a href="#main" id="jumpMain">Jump to Main</a>
+        <a href="https://www.stealthsoftwareinc.com" id="logoImg">
+          <img
+            src="/wizkit-blog/assets/icons/tetra-solid-100x100.png"
+            alt="Stealth Software Technologies Home Page" /></a>
+        <a href="/wizkit-blog/" id="titleLink">Team Wizkit</a>
+        <span id="spacer">&nbsp;</span>
+        
+          
+            <a href="/wizkit-blog/"
+              
+              >about</a>
+          
+        
+          
+            <a href="/wizkit-blog/blog.html"
+              
+              >blog</a>
+          
+        
+      </nav>
+    </header>
+    <main id="main" tabindex="-1">
+  <article>
+  <h1> Introducing the SIEVE Circuit-IR: Retrospective</h1>
+  <p>
+  <strong>Written:</strong>
+  <time datetime="2023-07-13 00:00:00 -0400">2023-07-13</time>,
+  
+    <strong>Published:</strong>
+    <time datetime="2023-08-30"> 2023-08-30</time>,
+  
+  <strong>Author:</strong> Kimberlee Model,
+  
+    <strong>Tags:</strong>
+    
+      <a href="/wizkit-blog/tag/sieve-ir
+">SIEVE IR</a>,
+    
+      <a href="/wizkit-blog/tag/circuit-ir
+">Circuit-IR</a>,
+    
+      <a href="/wizkit-blog/tag/v2-1-0
+">v2.1.0</a>,
+    
+      <a href="/wizkit-blog/tag/retrospective
+">Retrospective</a>,
+    
+  
+</p>
+
+
+  <hr />
+  <div class="paragraph">
+<p>In prior posts to this blog, we&#8217;ve certainly aired our grievances with the prior IR release (v1, whereas we&#8217;re now at v2).
+You may want to go back and skim <a href="2021-11-01-sieve-ir-v1.0-retrospective.adoc">the previous retrospective</a> and our <a href="2021-11-19-BOLT-two-pass-interpreter.adoc">BOLT fast interpreter</a>.
+But if you don&#8217;t want to review those, IR1&#8217;s (IR1 was the old IR&#8217;s code name) memory layout was completely disorganized, and some of its higher level features proved difficult (<code>@switch</code>) or slow (<code>@for</code>) to implement.
+We spent a bit of time developing the BOLT interpreter with a few tricks for greatly accelerating how loops could be processed.</p>
+</div>
+<div class="paragraph">
+<p>Previously, our team came up with a plan for a two layered approach to the IR (<a href="2022-05-26-replacing-the-sieve-ir.adoc">plan</a> and <a href="2022-09-26-evolving-the-sieve-ir-our-concrete-proposal.adoc">proposal</a>):</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>a low level to approximate a largely flat circuit</p>
+</li>
+<li>
+<p>a layer with higher level control flow, translatable to both the lower layer and to other high level representations (such as our <a href="https://github.com/emp-toolkit/emp-zk">EMP-ZK&#8217;s C++</a>).</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>The intention of the multi layer approach was that translating a high level IR to a flat circuit would enable flexibility and backwards compatibility, while the high level IR could retain additional semantic information for better speed up.</p>
+</div>
+<div class="paragraph">
+<p>So how does this new release fit into our earlier development plan?
+This revision <em>is</em> a development of the aforementioned low level flat(ish) circuit, which we&#8217;re aptly calling the <strong>Circuit-IR</strong>.</p>
+</div>
+<div class="paragraph">
+<p>The higher level "Translation-IR" is still in development, as it faced a bit of push back from other performers within the program, so we won&#8217;t discuss it in this post.</p>
+</div>
+<div class="paragraph">
+<p>At the end of the post about BOLT, we challenged ourselves to out perform IR1 BOLT purely on improvements to the IR.
+We expected that further semantic information in a higher level IR would be necessary to do this.
+Instead, we managed to outperform IR1 with Circuit-IR.</p>
+</div>
+<div class="paragraph">
+<p>We credit this performance to two developments:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Improvements to the memory layout which minimizes interpreter overhead.</p>
+</li>
+<li>
+<p>A better balance between minimizing relation IO against interpreter overhead</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>For the matrix-product circuit on a 350 sized square matrix, we see a marginal improvement from the loops/bolt column to the Circuit-IR functions column (unfortunately we see a disprovement on flat/streaming, but that&#8217;s not a column we actually care much about).
+This inspired us to try generating an IR1 relation using the equivalent function structure and run it with bolt.
+The result was almost twice as fast as any other column.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+These times were taken with the Non-ZK interpreters, and represent a lower bound on backend performance.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>The memory usage of each also paints a story.
+The memory layout of IR1 was complicated enough that we were never able to fully implement the <code>@delete</code> directive (IR1 didn&#8217;t have a <code>@new</code>).
+This is very evident when comparing the flat/streaming columns.
+the loops/bolt column has the lowest memory usage of all columns.
+In bolt, memory use is generally proportional to the size of the Parse Tree, so the functions/bolt memory use grows a lot.</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 16.6666%;">
+<col style="width: 16.6666%;">
+<col style="width: 16.6666%;">
+<col style="width: 16.6666%;">
+<col style="width: 16.6666%;">
+<col style="width: 16.667%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">&nbsp;</th>
+<th class="tableblock halign-left valign-top">IR1 flat/streaming</th>
+<th class="tableblock halign-left valign-top">IR1 loops/bolt</th>
+<th class="tableblock halign-left valign-top">Circuit-IR flat/streaming</th>
+<th class="tableblock halign-left valign-top">Circuit-IR functions/streaming</th>
+<th class="tableblock halign-left valign-top">IR1 functions/bolt</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">size</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2.9G</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2.4K</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2.9G</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">24M</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">24M</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">time (s)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">7.033s</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">3.294s</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">7.838s</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">3.051</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1.867s</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">mem (k)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2111476</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">12800</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">20692</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">36016</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">145700</p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>We are extremely pleased with the Circuit-IR.
+It managed to encode enough semantic information to significantly improve upon IR1, its memory efficiency is great, and it challenged our instincts on what makes for an ideal IR.
+We are strongly tempted to develop some sort of hybrid bolt/streaming interpreter for it.</p>
+</div>
+<hr>
+<div class="sidebarblock">
+<div class="content">
+<div class="paragraph">
+<p>This research was developed with funding from the Defense Advanced Research Projects Agency (DARPA) under Contract No. HR001120C0087.
+The views, opinions, and/or findings expressed are those of the author(s) and should not be interpreted as representing the official views or policies of the Department of Defense or the U.S. Government.</p>
+</div>
+<div class="paragraph">
+<p><strong>Distribution Statement "A":</strong> Approved for Public Release, Distribution Unlimited</p>
+</div>
+</div>
+</div>
+  <hr />
+  
+    <nav id="similarContent">
+      <h2 class="eyebrow">Similar Content</h2>
+      <ul>
+      
+        
+          
+            
+              <li>
+                <a href="/wizkit-blog/tag/sieve-ir
+">
+                  Tag: SIEVE IR
+                </a>
+                <ul>
+                
+                  
+                
+                  
+                    <li><a href="/wizkit-blog/2023/07/11/sieve-circuit-ir-plugins.html">Introducing the SIEVE Circuit-IR: Plugins</a></li>
+                  
+                
+                  
+                    <li><a href="/wizkit-blog/2023/07/10/sieve-circuit-ir-functions.html">Introducing the SIEVE Circuit-IR: Functions</a></li>
+                  
+                
+                  
+                    <li><a href="/wizkit-blog/2023/07/07/sieve-circuit-ir-multi-types-conversions.html">Introducing the SIEVE Circuit-IR: Multiple Types and Conversions</a></li>
+                  
+                
+                  
+                    <li><a href="/wizkit-blog/2023/07/06/introducing-the-sieve-circuit-ir-basics.html">Introducing the SIEVE Circuit-IR: Basics</a></li>
+                  
+                
+                  
+                    <li><a href="/wizkit-blog/2022/09/26/evolving-the-sieve-ir-our-concrete-proposal.html">Evolving the SIEVE IR: Our Concrete Proposal</a></li>
+                  
+                
+                  
+                    <li><a href="/wizkit-blog/2022/08/04/getting-started-with-the-ir.html">Getting Started with the SIEVE IR</a></li>
+                  
+                
+                  
+                    <li><a href="/wizkit-blog/2022/05/26/replacing-the-sieve-ir.html">Replacing the SIEVE Intermediate Representation</a></li>
+                  
+                
+                  
+                    <li><a href="/wizkit-blog/2021/11/19/BOLT-two-pass-interpreter.html">BOLT, Two Pass IR Interpreter</a></li>
+                  
+                
+                  
+                    <li><a href="/wizkit-blog/2021/11/01/sieve-ir-v1.0-retrospective.html">SIEVE IR v1.0 Retrospective</a></li>
+                  
+                
+                  
+                    <li><a href="/wizkit-blog/2021/09/20/introducing-the-sieve-ir.html">Introducing the SIEVE Intermediate Representation</a></li>
+                  
+                
+                </ul>
+              </li>
+            
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+      
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+            
+              <li>
+                <a href="/wizkit-blog/tag/circuit-ir
+">
+                  Tag: Circuit-IR
+                </a>
+                <ul>
+                
+                  
+                
+                  
+                    <li><a href="/wizkit-blog/2023/07/11/sieve-circuit-ir-plugins.html">Introducing the SIEVE Circuit-IR: Plugins</a></li>
+                  
+                
+                  
+                    <li><a href="/wizkit-blog/2023/07/10/sieve-circuit-ir-functions.html">Introducing the SIEVE Circuit-IR: Functions</a></li>
+                  
+                
+                  
+                    <li><a href="/wizkit-blog/2023/07/07/sieve-circuit-ir-multi-types-conversions.html">Introducing the SIEVE Circuit-IR: Multiple Types and Conversions</a></li>
+                  
+                
+                  
+                    <li><a href="/wizkit-blog/2023/07/06/introducing-the-sieve-circuit-ir-basics.html">Introducing the SIEVE Circuit-IR: Basics</a></li>
+                  
+                
+                </ul>
+              </li>
+            
+          
+        
+          
+        
+      
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+            
+              <li>
+                <a href="/wizkit-blog/tag/v2-1-0
+">
+                  Tag: v2.1.0
+                </a>
+                <ul>
+                
+                  
+                
+                  
+                    <li><a href="/wizkit-blog/2023/07/11/sieve-circuit-ir-plugins.html">Introducing the SIEVE Circuit-IR: Plugins</a></li>
+                  
+                
+                  
+                    <li><a href="/wizkit-blog/2023/07/10/sieve-circuit-ir-functions.html">Introducing the SIEVE Circuit-IR: Functions</a></li>
+                  
+                
+                  
+                    <li><a href="/wizkit-blog/2023/07/07/sieve-circuit-ir-multi-types-conversions.html">Introducing the SIEVE Circuit-IR: Multiple Types and Conversions</a></li>
+                  
+                
+                  
+                    <li><a href="/wizkit-blog/2023/07/06/introducing-the-sieve-circuit-ir-basics.html">Introducing the SIEVE Circuit-IR: Basics</a></li>
+                  
+                
+                </ul>
+              </li>
+            
+          
+        
+      
+        
+          
+        
+          
+        
+          
+        
+          
+            
+              <li>
+                <a href="/wizkit-blog/tag/retrospective
+">
+                  Tag: Retrospective
+                </a>
+                <ul>
+                
+                  
+                
+                  
+                    <li><a href="/wizkit-blog/2021/11/01/sieve-ir-v1.0-retrospective.html">SIEVE IR v1.0 Retrospective</a></li>
+                  
+                
+                </ul>
+              </li>
+            
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+      
+      </ul>
+    </nav>
+    
+</article>
+
+</main>
+
+    <footer>
+      
+        <p id="distributionStatement">
+          <strong>Distribution Statement A:</strong> Approved for Public Release, Distribution Unlimited.
+        </p>
+      
+      <p>
+        Copyright &copy; 2023, Stealth Software Technologies, Inc.
+        All Rights Reserved.
+      </p>
+      
+        <p id="acknowledgement">
+          This research was developed with funding from the Defense Advanced Research Projects Agency (DARPA) under Contract No. HR001120C0087. The views, opinions, and/or findings expressed are those of the author(s) and should not be interpreted as representing the official views or policies of the Department of Defense or the U.S. Government.
+        </p>
+      
+
+      <a href="https://www.stealthsoftwareinc.com" id="bottomLogoImg">
+        <img
+          src="/wizkit-blog/assets/icons/tetra-solid-400x100.png"
+          alt="Stealth Software Technologies Home Page" /></a>
+
+      
+        <nav>
+          <strong>Navigation</strong>
+          
+            <br />
+            <a href="/wizkit-blog/">About</a>
+          
+            <br />
+            <a href="/wizkit-blog/blog.html">Blog</a>
+          
+            <br />
+            <a href="mailto:team-wizkit@stealthsoftwareinc.com">Contact</a>
+          
+        </nav>
+      
+    </footer>
+  </body>
+</html>
+

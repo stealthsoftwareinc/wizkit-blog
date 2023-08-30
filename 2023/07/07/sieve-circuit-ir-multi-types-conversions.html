@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Introducing the SIEVE Circuit-IR: Multiple Types and Conversions - Team Wizkit</title>
+    <link rel="stylesheet"
+        href="/wizkit-blog/assets/css/fonts.css" />
+    <link rel="stylesheet"
+        href="/wizkit-blog/assets/css/layout.css" />
+    <link rel="stylesheet"
+        href="/wizkit-blog/assets/css/content.css" />
+
+    <link rel="shortcut icon" type="image/png"
+        href="/wizkit-blog/assets/icons/tetra-solid-32x32.png" />
+
+    <link type="application/atom+xml" rel="alternate" href="https://stealthsoftwareinc.github.io/wizkit-blog/feed.xml" title="Team Wizkit" />
+    <!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Introducing the SIEVE Circuit-IR: Multiple Types and Conversions | Team Wizkit</title>
+<meta name="generator" content="Jekyll v4.2.2" />
+<meta property="og:title" content="Introducing the SIEVE Circuit-IR: Multiple Types and Conversions" />
+<meta name="author" content="Kimberlee Model" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="In this series, we are examining the new SIEVE Circuit-IR. This installment will examine its type system and how it enables multiple types to be combined within the same relation." />
+<meta property="og:description" content="In this series, we are examining the new SIEVE Circuit-IR. This installment will examine its type system and how it enables multiple types to be combined within the same relation." />
+<link rel="canonical" href="https://stealthsoftwareinc.github.io/wizkit-blog/2023/07/07/sieve-circuit-ir-multi-types-conversions.html" />
+<meta property="og:url" content="https://stealthsoftwareinc.github.io/wizkit-blog/2023/07/07/sieve-circuit-ir-multi-types-conversions.html" />
+<meta property="og:site_name" content="Team Wizkit" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2023-07-07T00:00:00-04:00" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="Introducing the SIEVE Circuit-IR: Multiple Types and Conversions" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Kimberlee Model"},"dateModified":"2023-07-07T00:00:00-04:00","datePublished":"2023-07-07T00:00:00-04:00","description":"In this series, we are examining the new SIEVE Circuit-IR. This installment will examine its type system and how it enables multiple types to be combined within the same relation.","headline":"Introducing the SIEVE Circuit-IR: Multiple Types and Conversions","mainEntityOfPage":{"@type":"WebPage","@id":"https://stealthsoftwareinc.github.io/wizkit-blog/2023/07/07/sieve-circuit-ir-multi-types-conversions.html"},"url":"https://stealthsoftwareinc.github.io/wizkit-blog/2023/07/07/sieve-circuit-ir-multi-types-conversions.html"}</script>
+<!-- End Jekyll SEO tag -->
+
+
+    <script>0</script>
+  </head>
+  <body>
+    <header>
+      <nav id="topNav">
+        <a href="#main" id="jumpMain">Jump to Main</a>
+        <a href="https://www.stealthsoftwareinc.com" id="logoImg">
+          <img
+            src="/wizkit-blog/assets/icons/tetra-solid-100x100.png"
+            alt="Stealth Software Technologies Home Page" /></a>
+        <a href="/wizkit-blog/" id="titleLink">Team Wizkit</a>
+        <span id="spacer">&nbsp;</span>
+        
+          
+            <a href="/wizkit-blog/"
+              
+              >about</a>
+          
+        
+          
+            <a href="/wizkit-blog/blog.html"
+              
+              >blog</a>
+          
+        
+      </nav>
+    </header>
+    <main id="main" tabindex="-1">
+  <article>
+  <h1> Introducing the SIEVE Circuit-IR: Multiple Types and Conversions</h1>
+  <p>
+  <strong>Written:</strong>
+  <time datetime="2023-07-07 00:00:00 -0400">2023-07-07</time>,
+  
+    <strong>Published:</strong>
+    <time datetime="2023-08-30"> 2023-08-30</time>,
+  
+  <strong>Author:</strong> Kimberlee Model,
+  
+    <strong>Tags:</strong>
+    
+      <a href="/wizkit-blog/tag/sieve-ir
+">SIEVE IR</a>,
+    
+      <a href="/wizkit-blog/tag/circuit-ir
+">Circuit-IR</a>,
+    
+      <a href="/wizkit-blog/tag/v2-1-0
+">v2.1.0</a>,
+    
+  
+</p>
+
+
+  <hr />
+  <div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>In this series, we are examining the new SIEVE Circuit-IR.
+This installment will examine its type system and how it enables multiple types to be combined within the same relation.</p>
+</div>
+<div class="paragraph">
+<p>One goal of this revision of the SIEVE IR is to support multiple fields in the same circuit.
+Although within a backend there may be significant distinctions between different fields, framing multiple fields, and even rings, as types of wires within the same circuit eases development for frontends.
+In one application, we found ourselves needing to integrate four primes: a pair of large primes for ED-DSA signatures, 2 for computing SHA hashes, and 2<sup>61</sup>-1 for the proof&#8217;s "business logic".</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="declaring-types">Declaring Types</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>To understand the SIEVE-IR&#8217;s type system lets take a closer look at the header.
+The header&#8217;s we&#8217;ve seen so far have had just one field, but a circuits may list one or more types in its header (up to 256 types).
+Each type is assigned a type index, starting at 0 and incrementing.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>@version 2.0.0;
+circuit;
+@type field 127; // type 0
+@type field 2;   // type 1
+@begin</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Prime fields are not the only types the IR allows.
+It also allows extension fields () and rings (modulo 2<em>n</em>).</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">Prime Fields GF(<em>p</em>)</dt>
+<dd>
+<p>Prime fields behave like positive integers modulo some prime. Fields enjoy the broadest support by backends.</p>
+<div class="ulist">
+<ul>
+<li>
+<p><code>@type field [prime];</code></p>
+</li>
+</ul>
+</div>
+</dd>
+<dt class="hdlist1">Rings (modulo 2<sup><em>n</em></sup>)</dt>
+<dd>
+<p>Rings behave like positive integers modulo two to some power, <em>n</em>. They should feel familiar to anyone familiar with common unsigned int types.</p>
+<div class="ulist">
+<ul>
+<li>
+<p><code>@type ring [n];</code></p>
+</li>
+</ul>
+</div>
+</dd>
+<dt class="hdlist1">Extension Fields GF(<em>p<sup>n</sup></em>)</dt>
+<dd>
+<p>Extension fields are polynomials of some base prime field, up to some degree, <em>n</em>.
+Rather than evaluating the polynomial at some particular point, we can add and multiply these by their coefficients, preventing the growth of new terms by modulus over an irreducible polynomial.
+In the IR, extension fields are defined by a base field&#8201;&#8212;&#8201;the type index of a prior prime field, <em>baseidx</em>&#8201;&#8212;&#8201;and an integer encoding of the irreducible polynomial, <em>ipoly</em>.
+<em>ipoly</em> is a single integer encoding of the coefficients, <em>c<sub>i</sub></em>, using the base field&#8217;s prime, <em>p</em>.
+Most folk&#8217;s won&#8217;t need to use extension fields.</p>
+<div class="ulist">
+<ul>
+<li>
+<p><em>ipoly</em> = &#x03A3; <em>c<sub>i</sub></em> * <em>p<sup>i</sup></em></p>
+</li>
+<li>
+<p><code>@type ext_field [baseidx] [n] [ipoly];</code></p>
+</li>
+</ul>
+</div>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="using-multiple-types">Using Multiple Types</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Within the body of a circuit, each wire&#8217;s number is actually a pair of the type index and then the wire number.
+This means there&#8217;s a different numbering space for every type.
+By default, a gate will assume the type index is 0, however non-zero types may use the form <code>@operation(index: $inputs)</code> to set the type index of all wires accessed by the gate.
+In general, all of a gates operands are of the same type (the circuit&#8217;s meaning would be somewhat nonsensical otherwise).</p>
+</div>
+<div class="paragraph">
+<p>Here&#8217;s a sample circuit which uses prime fields 127 and 2.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>  // private inputs in each field.
+  $0 &lt;- @private(0); // wire 0:$0 (field 127, above)
+  $0 &lt;- @private(1); // wire 1:$0 (field 2, above)
+
+  // Add and mul in each fields.
+  $1 &lt;- @add(0: $0, $0);
+  $1 &lt;- @mul(1: $0, $0);
+@end</pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="conversion-gates">Conversion Gates</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Of course having multiple types is somewhat useless without being able to interact them with each other.
+For this we introduce the <code>@convert</code> gate which converts wires from one type to another.
+The convert gate will convert input wire(s) to output wires by accumulating each input wire as if it were a digit in a larger integer, then re-digitizing them in the output field.
+This way an <code>@convert</code> gate which outputs to GF(2) is the equivalent of a big endian bit decomposition, and GF(3) would be a trit-decomposition.</p>
+</div>
+<div class="paragraph">
+<p>Concretely, the convert gate introduces a <em>wire range</em> syntax expressing a sequence of wires.
+A range has the form, <code>$first &#8230;&#8203; $last</code>, meaning that every wire starting with <code>$first</code> up to and including <code>$last</code>.
+Of course, <code>$first</code> must not be greater than <code>$last</code>, and if they are equal <code>$last</code> may be omitted.
+Wire ranges serving as inputs must also obey memory contiguity rules, which will be discussed further on in this post.
+For now, the <code>@new($first &#8230;&#8203; $last);</code> directive will allocate contiguous space for any necessary range.</p>
+</div>
+<div class="paragraph">
+<p>The convert gate has the syntax <code>out_type: $output_first &#8230;&#8203; $output_last &#8592; @convert(in_type: $input_first &#8230;&#8203; $input_last);</code>.
+When applicable, <code>&#8230;&#8203; $output_last</code> and <code>&#8230;&#8203; $input_last</code> may be omitted.
+Here&#8217;s an example converting between GF(2), and GF(7).</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>@version 2.0.0;
+circuit;
+@type field 2; // type 0
+@type field 7;   // type 1
+@begin
+  // Convert all zeros
+  @new($0...$2);
+  $0 &lt;- 0: &lt;0&gt;; // assigns a constant
+  $1 &lt;- 0: &lt;0&gt;;
+  $2 &lt;- 0: &lt;0&gt;;
+
+  1: $0 &lt;- @convert(0: $0 ... $2); // Converts to 0
+
+  // Convert 1
+  @new($3...$5);
+  $3 &lt;- 0: &lt;0&gt;;
+  $4 &lt;- 0: &lt;0&gt;;
+  $5 &lt;- 0: &lt;1&gt;;
+
+  1: $1 &lt;- @convert(0: $3 ... $5); // Converts to 1
+
+  // Convert 6
+  @new($6...$8);
+  $6 &lt;- 0: &lt;1&gt;;
+  $7 &lt;- 0: &lt;1&gt;;
+  $8 &lt;- 0: &lt;0&gt;;
+
+  1: $2 &lt;- @convert(0: $3 ... $5); // Converts to 6
+
+  // Convert 7
+  @new($9...$11);
+  $9 &lt;- 0: &lt;1&gt;;
+  $10 &lt;- 0: &lt;1&gt;;
+  $11 &lt;- 0: &lt;1&gt;;
+
+  1: $3 &lt;- @convert(0: $3 ... $5); // Converts to 7?!
+@end</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The last example <em>1,1,1</em> should convert to <em>7</em>, but that overflows the field.
+The convert gate has an optional <code>@modulus</code> or <code>@no_modulus</code> tag specifying how it handles overflow, <code>@convert(/* &#8230;&#8203; */, @no_modulus)</code>.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>In <code>@modulus</code> mode an overflowing value wraps around modularly, in this case back to 0.</p>
+</li>
+<li>
+<p>In <code>@no_modulus</code> mode an overflow causes the proof to be false&#8201;&#8212;&#8201;same as <code>@assert_zero</code> of a non-zero wire.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="conclusion">Conclusion</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Today&#8217;s installment overviewed how the Circuit-IR enables a proof to utilize multiple types, and convert wires from one type to another.
+Generally, conversions are fairly expensive in ZK, and should be avoided when possible.
+Sometimes they are necessary&#8201;&#8212;&#8201;when a subcomputation cannot be performed in one type, or when the savings from performing a subcomputation in an alternative field exceeds the cost of conversion.</p>
+</div>
+<div class="paragraph">
+<p>Next up, we will have a look at Circuit-IR functions and memory management, features which enable a great amount of scalability.</p>
+</div>
+<hr>
+<div class="sidebarblock">
+<div class="content">
+<div class="paragraph">
+<p>This research was developed with funding from the Defense Advanced Research Projects Agency (DARPA) under Contract No. HR001120C0087.
+The views, opinions, and/or findings expressed are those of the author(s) and should not be interpreted as representing the official views or policies of the Department of Defense or the U.S. Government.</p>
+</div>
+<div class="paragraph">
+<p><strong>Distribution Statement "A":</strong> Approved for Public Release, Distribution Unlimited</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+  <hr />
+  
+    <nav id="similarContent">
+      <h2 class="eyebrow">Similar Content</h2>
+      <ul>
+      
+        
+          
+            
+              <li>
+                <a href="/wizkit-blog/tag/sieve-ir
+">
+                  Tag: SIEVE IR
+                </a>
+                <ul>
+                
+                  
+                    <li><a href="/wizkit-blog/2023/07/13/sieve-circuit-ir-retrospective.html">Introducing the SIEVE Circuit-IR: Retrospective</a></li>
+                  
+                
+                  
+                    <li><a href="/wizkit-blog/2023/07/11/sieve-circuit-ir-plugins.html">Introducing the SIEVE Circuit-IR: Plugins</a></li>
+                  
+                
+                  
+                    <li><a href="/wizkit-blog/2023/07/10/sieve-circuit-ir-functions.html">Introducing the SIEVE Circuit-IR: Functions</a></li>
+                  
+                
+                  
+                
+                  
+                    <li><a href="/wizkit-blog/2023/07/06/introducing-the-sieve-circuit-ir-basics.html">Introducing the SIEVE Circuit-IR: Basics</a></li>
+                  
+                
+                  
+                    <li><a href="/wizkit-blog/2022/09/26/evolving-the-sieve-ir-our-concrete-proposal.html">Evolving the SIEVE IR: Our Concrete Proposal</a></li>
+                  
+                
+                  
+                    <li><a href="/wizkit-blog/2022/08/04/getting-started-with-the-ir.html">Getting Started with the SIEVE IR</a></li>
+                  
+                
+                  
+                    <li><a href="/wizkit-blog/2022/05/26/replacing-the-sieve-ir.html">Replacing the SIEVE Intermediate Representation</a></li>
+                  
+                
+                  
+                    <li><a href="/wizkit-blog/2021/11/19/BOLT-two-pass-interpreter.html">BOLT, Two Pass IR Interpreter</a></li>
+                  
+                
+                  
+                    <li><a href="/wizkit-blog/2021/11/01/sieve-ir-v1.0-retrospective.html">SIEVE IR v1.0 Retrospective</a></li>
+                  
+                
+                  
+                    <li><a href="/wizkit-blog/2021/09/20/introducing-the-sieve-ir.html">Introducing the SIEVE Intermediate Representation</a></li>
+                  
+                
+                </ul>
+              </li>
+            
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+      
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+            
+              <li>
+                <a href="/wizkit-blog/tag/circuit-ir
+">
+                  Tag: Circuit-IR
+                </a>
+                <ul>
+                
+                  
+                    <li><a href="/wizkit-blog/2023/07/13/sieve-circuit-ir-retrospective.html">Introducing the SIEVE Circuit-IR: Retrospective</a></li>
+                  
+                
+                  
+                    <li><a href="/wizkit-blog/2023/07/11/sieve-circuit-ir-plugins.html">Introducing the SIEVE Circuit-IR: Plugins</a></li>
+                  
+                
+                  
+                    <li><a href="/wizkit-blog/2023/07/10/sieve-circuit-ir-functions.html">Introducing the SIEVE Circuit-IR: Functions</a></li>
+                  
+                
+                  
+                
+                  
+                    <li><a href="/wizkit-blog/2023/07/06/introducing-the-sieve-circuit-ir-basics.html">Introducing the SIEVE Circuit-IR: Basics</a></li>
+                  
+                
+                </ul>
+              </li>
+            
+          
+        
+          
+        
+      
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+            
+              <li>
+                <a href="/wizkit-blog/tag/v2-1-0
+">
+                  Tag: v2.1.0
+                </a>
+                <ul>
+                
+                  
+                    <li><a href="/wizkit-blog/2023/07/13/sieve-circuit-ir-retrospective.html">Introducing the SIEVE Circuit-IR: Retrospective</a></li>
+                  
+                
+                  
+                    <li><a href="/wizkit-blog/2023/07/11/sieve-circuit-ir-plugins.html">Introducing the SIEVE Circuit-IR: Plugins</a></li>
+                  
+                
+                  
+                    <li><a href="/wizkit-blog/2023/07/10/sieve-circuit-ir-functions.html">Introducing the SIEVE Circuit-IR: Functions</a></li>
+                  
+                
+                  
+                
+                  
+                    <li><a href="/wizkit-blog/2023/07/06/introducing-the-sieve-circuit-ir-basics.html">Introducing the SIEVE Circuit-IR: Basics</a></li>
+                  
+                
+                </ul>
+              </li>
+            
+          
+        
+      
+      </ul>
+    </nav>
+    
+</article>
+
+</main>
+
+    <footer>
+      
+        <p id="distributionStatement">
+          <strong>Distribution Statement A:</strong> Approved for Public Release, Distribution Unlimited.
+        </p>
+      
+      <p>
+        Copyright &copy; 2023, Stealth Software Technologies, Inc.
+        All Rights Reserved.
+      </p>
+      
+        <p id="acknowledgement">
+          This research was developed with funding from the Defense Advanced Research Projects Agency (DARPA) under Contract No. HR001120C0087. The views, opinions, and/or findings expressed are those of the author(s) and should not be interpreted as representing the official views or policies of the Department of Defense or the U.S. Government.
+        </p>
+      
+
+      <a href="https://www.stealthsoftwareinc.com" id="bottomLogoImg">
+        <img
+          src="/wizkit-blog/assets/icons/tetra-solid-400x100.png"
+          alt="Stealth Software Technologies Home Page" /></a>
+
+      
+        <nav>
+          <strong>Navigation</strong>
+          
+            <br />
+            <a href="/wizkit-blog/">About</a>
+          
+            <br />
+            <a href="/wizkit-blog/blog.html">Blog</a>
+          
+            <br />
+            <a href="mailto:team-wizkit@stealthsoftwareinc.com">Contact</a>
+          
+        </nav>
+      
+    </footer>
+  </body>
+</html>
+

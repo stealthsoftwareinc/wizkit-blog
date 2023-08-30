@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Introducing the SIEVE Circuit-IR: Functions - Team Wizkit</title>
+    <link rel="stylesheet"
+        href="/wizkit-blog/assets/css/fonts.css" />
+    <link rel="stylesheet"
+        href="/wizkit-blog/assets/css/layout.css" />
+    <link rel="stylesheet"
+        href="/wizkit-blog/assets/css/content.css" />
+
+    <link rel="shortcut icon" type="image/png"
+        href="/wizkit-blog/assets/icons/tetra-solid-32x32.png" />
+
+    <link type="application/atom+xml" rel="alternate" href="https://stealthsoftwareinc.github.io/wizkit-blog/feed.xml" title="Team Wizkit" />
+    <!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Introducing the SIEVE Circuit-IR: Functions | Team Wizkit</title>
+<meta name="generator" content="Jekyll v4.2.2" />
+<meta property="og:title" content="Introducing the SIEVE Circuit-IR: Functions" />
+<meta name="author" content="Kimberlee Model" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="The SIEVE IR&#8217;s function gates will encapsulate a subcircuit so it may be reused many times over. Doing this can drastically reduce the size of a circuit. This may seem unimportant, considering how an interactive proof is likely to have communication proportional to the number of gates, however IO of the relation has proved to be a bottleneck in the past, and some relations have taken terabytes of space. So, its worth it to attempt to compress the circuit as much as possible." />
+<meta property="og:description" content="The SIEVE IR&#8217;s function gates will encapsulate a subcircuit so it may be reused many times over. Doing this can drastically reduce the size of a circuit. This may seem unimportant, considering how an interactive proof is likely to have communication proportional to the number of gates, however IO of the relation has proved to be a bottleneck in the past, and some relations have taken terabytes of space. So, its worth it to attempt to compress the circuit as much as possible." />
+<link rel="canonical" href="https://stealthsoftwareinc.github.io/wizkit-blog/2023/07/10/sieve-circuit-ir-functions.html" />
+<meta property="og:url" content="https://stealthsoftwareinc.github.io/wizkit-blog/2023/07/10/sieve-circuit-ir-functions.html" />
+<meta property="og:site_name" content="Team Wizkit" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2023-07-10T00:00:00-04:00" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="Introducing the SIEVE Circuit-IR: Functions" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Kimberlee Model"},"dateModified":"2023-07-10T00:00:00-04:00","datePublished":"2023-07-10T00:00:00-04:00","description":"The SIEVE IR&#8217;s function gates will encapsulate a subcircuit so it may be reused many times over. Doing this can drastically reduce the size of a circuit. This may seem unimportant, considering how an interactive proof is likely to have communication proportional to the number of gates, however IO of the relation has proved to be a bottleneck in the past, and some relations have taken terabytes of space. So, its worth it to attempt to compress the circuit as much as possible.","headline":"Introducing the SIEVE Circuit-IR: Functions","mainEntityOfPage":{"@type":"WebPage","@id":"https://stealthsoftwareinc.github.io/wizkit-blog/2023/07/10/sieve-circuit-ir-functions.html"},"url":"https://stealthsoftwareinc.github.io/wizkit-blog/2023/07/10/sieve-circuit-ir-functions.html"}</script>
+<!-- End Jekyll SEO tag -->
+
+
+    <script>0</script>
+  </head>
+  <body>
+    <header>
+      <nav id="topNav">
+        <a href="#main" id="jumpMain">Jump to Main</a>
+        <a href="https://www.stealthsoftwareinc.com" id="logoImg">
+          <img
+            src="/wizkit-blog/assets/icons/tetra-solid-100x100.png"
+            alt="Stealth Software Technologies Home Page" /></a>
+        <a href="/wizkit-blog/" id="titleLink">Team Wizkit</a>
+        <span id="spacer">&nbsp;</span>
+        
+          
+            <a href="/wizkit-blog/"
+              
+              >about</a>
+          
+        
+          
+            <a href="/wizkit-blog/blog.html"
+              
+              >blog</a>
+          
+        
+      </nav>
+    </header>
+    <main id="main" tabindex="-1">
+  <article>
+  <h1> Introducing the SIEVE Circuit-IR: Functions</h1>
+  <p>
+  <strong>Written:</strong>
+  <time datetime="2023-07-10 00:00:00 -0400">2023-07-10</time>,
+  
+    <strong>Published:</strong>
+    <time datetime="2023-08-30"> 2023-08-30</time>,
+  
+  <strong>Author:</strong> Kimberlee Model,
+  
+    <strong>Tags:</strong>
+    
+      <a href="/wizkit-blog/tag/sieve-ir
+">SIEVE IR</a>,
+    
+      <a href="/wizkit-blog/tag/circuit-ir
+">Circuit-IR</a>,
+    
+      <a href="/wizkit-blog/tag/v2-1-0
+">v2.1.0</a>,
+    
+  
+</p>
+
+
+  <hr />
+  <div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>The SIEVE IR&#8217;s function gates will encapsulate a subcircuit so it may be reused many times over.
+Doing this can drastically reduce the size of a circuit.
+This may seem unimportant, considering how an interactive proof is likely to have communication proportional to the number of gates, however IO of the relation has proved to be a bottleneck in the past, and some relations have taken terabytes of space.
+So, its worth it to attempt to compress the circuit as much as possible.</p>
+</div>
+<div class="paragraph">
+<p>Another aspect of increasing the IR&#8217;s scalability is reducing memory consumption.
+This installment will show off the <code>@new(/* &#8230;&#8203; <strong>/);</code> and <code>@delete(/</strong> &#8230;&#8203; */);</code> directives and show how their use impacts function gates.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="function-gates">Function Gates</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Lets start with an example: the <code>equals</code> function has two input wires and one output wire.
+If the two inputs have the same value it outputs 1, otherwise it outputs 0.</p>
+</div>
+<div class="paragraph">
+<p>A function declaration always begins with a signature listing  its output and input parameters.
+Each parameter has a type index and a length.
+Within the function&#8217;s body wire numbers restart at 0.
+Within each type, output wires are assigned to the parameters, left to right&#8201;&#8212;&#8201;so the first output wire is 0&#8201;&#8212;&#8201;and incrementing from there.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>@version 2.0.0;
+circuit;
+@type field 127;
+@begin
+
+  @function(equals, @out: 0:1, @in: 0:1, 0:1)
+    // Output wire 0:$0
+    // Input wires 0:$1 and 0:$2</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The body of the function is simply a list of gates, one of which assigns to the output wire.
+For equality we&#8217;re going to use <a href="https://en.wikipedia.org/wiki/Fermat%27s_little_theorem">Fermat&#8217;s Little Theorem</a> for reducing a non-zero value to 1.
+When raising a number to <em>p-1</em> mod <em>p</em>, any non-zero value will yield 1.
+Thus, we can subtract and exponentiate to get inequality, and flip to get equality.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>    // Subtract
+    $3 &lt;- @mulc($2, &lt;126&gt;);
+    $4 &lt;- @add($1, $3);
+
+    // Exponentiation by squaring, iterative method, unrolled.
+    $5 &lt;- @mul($4, $4);
+    $6 &lt;- @mulc($5, &lt;1&gt;);
+    $7 &lt;- @mul($5, $5);
+    $8 &lt;- @mul($7, $6);
+    $9 &lt;- @mul($7, $7);
+    $10 &lt;- @mul($9, $8);
+    $11 &lt;- @mul($9, $9);
+    $12 &lt;- @mul($11, $10);
+    $13 &lt;- @mul($11, $11);
+    $14 &lt;- @mul($13, $12);
+    $15 &lt;- @mul($13, $13);
+    $16 &lt;- @mul($14, $15);
+    // Did I mention the IR is intended to be computer generated?
+
+    // Flip from 0|1 to 1|0
+    $17 &lt;- @mulc($16, &lt;126&gt;); // 0 or -1
+    $0 &lt;- @addc($17, &lt;1&gt;); // assigns to the output wire
+ @end</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Using an equality check is now as simple as calling this function.
+The <code>$outputs&#8230;&#8203; &#8592; @call(function_name, $inputs&#8230;&#8203;);</code> syntax lets us do just that.
+Each wire or wire range specified in the call gate will be passed to the function.
+Input wires must have been previously assigned in the circuit, while output wires will be assigned by the function.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>  $0 &lt;- @private();
+  $1 &lt;- @private();
+
+  // call the function
+  $2 &lt;- @call(equals, $0, $1);
+
+  @assert_zero($2);
+@end</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>When using functions with multiple types, the call gate doesn&#8217;t actually need type indexes for each parameter, in fact the syntax does not even allow for this.
+Instead, the backend can look at the function&#8217;s signature and each parameter is retrieved using the type from the signature.</p>
+</div>
+<div class="paragraph">
+<p>Here&#8217;s a quick example.
+Notice that the commented types of the <code>@call</code> match those of the function definition</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>@function(foo, @out: 0:1, 1:1, @in 1:1, 0:1, 1:1)
+  /* ... */
+@end
+
+$0 &lt;- @private(0);
+$0 &lt;- @private(1);
+$1 &lt;- @private(1);
+
+/* 0 */ $2, /* 1 */ $2 &lt;- @call(foo, /* 1 */ $0, /* 0 */ $0, /* 1 */ $1);
+
+@assert_zero(0: $2);
+@assert_zero(1: $2);</pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="memory-management">Memory Management</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Memory management in the IR began with the addition of a <code>@delete($first &#8230;&#8203; $last);</code> gate which hinted to a backend that a range of wires would not be used further, and that memory for them could be freed.
+This was beneficial as we were considering how to stream very long circuits, before we created IR functions.</p>
+</div>
+<div class="paragraph">
+<p>As we added functions we we found it difficult for the backend to actually delete wires while maintaining adequate performance.
+No longer was the IR&#8217;s implementation a single append-only list, now we wanted delete segments from it and pass segments to sub-functions.
+So we put in restrictions to make memory management more manageable.</p>
+</div>
+<div class="paragraph">
+<p>Consider a memory manager which allocates chucks of 8 wires at a time.
+We have nice little 8-wire chunks, not too big not too small, and we can allocate as needed and delete on command.
+What happens when we call a function that requires inputs in chunks of 10?
+Now we have a problem: we could copy our 8-wire chunks in to new 10-wire chunks, but that&#8217;s too slow; we could make "super-chunks" which are composed of smaller chunks and pass the super-chunks, but that&#8217;s too complex.
+What we came up with was to pass the problem on to the frontend.
+While that seems like its just kicking the can to someone else, the frontend has more information about the problem they&#8217;re trying to solve.
+For example, if the frontend is using some range of wires to represent an array, then they probably already know the array&#8217;s length and could have encoded that into the IR.
+So we paired <code>@delete</code> with a <code>@new($first &#8230;&#8203; $last);</code> directive.
+Now the frontend can request memory allocations of a particular size and delete them when finished.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>// Allocate some wires
+@new($0 ... $5);
+
+/* assign and use them... */
+$0 &lt;- /* ... */;
+$1 &lt;- /* ... */;
+/* ... */
+
+// Now we're done, delete them.
+@delete($0 ... $5);</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>In a function call, any wire range must come from the same allocation.
+Output wire ranges may be implicitly allocated, but if prior allocations conflict, then a problem would arise.
+Let&#8217;s take a look at a few examples using the <code>mul4</code> and <code>dot4</code> functions which will multiply 4 pairs of wires and return the products and the sum-of-products respectively.</p>
+</div>
+<div class="paragraph">
+<p>Here are the functions.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>@function(mul4, @out: 0:4, @in: 0:4, 0:4)
+  $0 &lt;- @mul($4, $8);
+  $1 &lt;- @mul($5, $9);
+  $2 &lt;- @mul($6, $10);
+  $3 &lt;- @mul($7, $11);
+@end
+
+@function(dot4, @out: 0:1, @in: 0:4, 0:4)
+  $9 &lt;- @mul($1, $5);
+  $10 &lt;- @mul($2, $6);
+  $11 &lt;- @mul($3, $7);
+  $12 &lt;- @mul($4, $8);
+  $13 &lt;- @add($9, $10);
+  $14 &lt;- @add($11, $12);
+  $0 &lt;- @add($13, $14);
+@end</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This example would cause a problem because all the inputs are allocated singly.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>$0 &lt;- @private();
+$1 &lt;- @private();
+$2 &lt;- @private();
+$3 &lt;- @private();
+$4 &lt;- @private();
+$5 &lt;- @private();
+$6 &lt;- @private();
+$7 &lt;- @private();
+
+$8 &lt;- @call(dot4, $0 ... $3, $4 ... $7); // ERROR</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This example fixes it by allocating two ranges to pass to the function.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>@new($0 ... $3);
+$0 &lt;- @private();
+$1 &lt;- @private();
+$2 &lt;- @private();
+$3 &lt;- @private();
+@new($4 ... $7);
+$4 &lt;- @private();
+$5 &lt;- @private();
+$6 &lt;- @private();
+$7 &lt;- @private();
+
+$8 &lt;- @call(dot4, $0 ... $3, $4 ... $7); // Okay</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This example fixes it by allocating a single range and subseting the range as the function&#8217;s arguments.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>@new($0 ... $7);
+$0 &lt;- @private();
+$1 &lt;- @private();
+$2 &lt;- @private();
+$3 &lt;- @private();
+$4 &lt;- @private();
+$5 &lt;- @private();
+$6 &lt;- @private();
+$7 &lt;- @private();
+
+$8 &lt;- @call(dot4, $0 ... $3, $4 ... $7); // Okay</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>In this example, the function&#8217;s output may even be a part of the original allocation.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>@new($0 ... $8);
+$0 &lt;- @private();
+$1 &lt;- @private();
+$2 &lt;- @private();
+$3 &lt;- @private();
+$4 &lt;- @private();
+$5 &lt;- @private();
+$6 &lt;- @private();
+$7 &lt;- @private();
+
+$8 &lt;- @call(dot4, $0 ... $3, $4 ... $7); // Okay</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Now lets try with <code>mul4</code>.
+This example works just fine, because <code>$8 &#8230;&#8203; $11</code> can be allocated implicitly.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>@new($0 ... $3);
+$0 &lt;- @private();
+$1 &lt;- @private();
+$2 &lt;- @private();
+$3 &lt;- @private();
+@new($4 ... $7);
+$4 &lt;- @private();
+$5 &lt;- @private();
+$6 &lt;- @private();
+$7 &lt;- @private();
+
+$8 ... $11 &lt;- @call(mul4, $0 ... $3, $4 ... $7); // Okay</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This one fails because the over allocation of the original range conflicts with implicit allocation of the call&#8217;s output.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>@new($0 ... $8);
+$0 &lt;- @private();
+$1 &lt;- @private();
+$2 &lt;- @private();
+$3 &lt;- @private();
+$4 &lt;- @private();
+$5 &lt;- @private();
+$6 &lt;- @private();
+$7 &lt;- @private();
+
+$8 ... $11 &lt;- @call(mul4, $0 ... $3, $4 ... $7); // ERROR</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>But extending the allocation to include  the call&#8217;s output fixes it.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>@new($0 ... $11);
+$0 &lt;- @private();
+$1 &lt;- @private();
+$2 &lt;- @private();
+$3 &lt;- @private();
+$4 &lt;- @private();
+$5 &lt;- @private();
+$6 &lt;- @private();
+$7 &lt;- @private();
+
+$8 ... $11 &lt;- @call(mul4, $0 ... $3, $4 ... $7); // Okay</pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="conclusion">Conclusion</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Today we saw how functions can be used to encapsulate sub-circuits and be called repeatedly, which can drastically reduce the size of a circuit.
+We also took a look at the IR&#8217;s memory management, enabling unused memory to be reclaimed mid-proof.
+Both of these enable backends to run circuits with billions or trillions of gates, sometimes taking hours or days to complete.</p>
+</div>
+<hr>
+<div class="sidebarblock">
+<div class="content">
+<div class="paragraph">
+<p>This research was developed with funding from the Defense Advanced Research Projects Agency (DARPA) under Contract No. HR001120C0087.
+The views, opinions, and/or findings expressed are those of the author(s) and should not be interpreted as representing the official views or policies of the Department of Defense or the U.S. Government.</p>
+</div>
+<div class="paragraph">
+<p><strong>Distribution Statement "A":</strong> Approved for Public Release, Distribution Unlimited</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+  <hr />
+  
+    <nav id="similarContent">
+      <h2 class="eyebrow">Similar Content</h2>
+      <ul>
+      
+        
+          
+            
+              <li>
+                <a href="/wizkit-blog/tag/sieve-ir
+">
+                  Tag: SIEVE IR
+                </a>
+                <ul>
+                
+                  
+                    <li><a href="/wizkit-blog/2023/07/13/sieve-circuit-ir-retrospective.html">Introducing the SIEVE Circuit-IR: Retrospective</a></li>
+                  
+                
+                  
+                    <li><a href="/wizkit-blog/2023/07/11/sieve-circuit-ir-plugins.html">Introducing the SIEVE Circuit-IR: Plugins</a></li>
+                  
+                
+                  
+                
+                  
+                    <li><a href="/wizkit-blog/2023/07/07/sieve-circuit-ir-multi-types-conversions.html">Introducing the SIEVE Circuit-IR: Multiple Types and Conversions</a></li>
+                  
+                
+                  
+                    <li><a href="/wizkit-blog/2023/07/06/introducing-the-sieve-circuit-ir-basics.html">Introducing the SIEVE Circuit-IR: Basics</a></li>
+                  
+                
+                  
+                    <li><a href="/wizkit-blog/2022/09/26/evolving-the-sieve-ir-our-concrete-proposal.html">Evolving the SIEVE IR: Our Concrete Proposal</a></li>
+                  
+                
+                  
+                    <li><a href="/wizkit-blog/2022/08/04/getting-started-with-the-ir.html">Getting Started with the SIEVE IR</a></li>
+                  
+                
+                  
+                    <li><a href="/wizkit-blog/2022/05/26/replacing-the-sieve-ir.html">Replacing the SIEVE Intermediate Representation</a></li>
+                  
+                
+                  
+                    <li><a href="/wizkit-blog/2021/11/19/BOLT-two-pass-interpreter.html">BOLT, Two Pass IR Interpreter</a></li>
+                  
+                
+                  
+                    <li><a href="/wizkit-blog/2021/11/01/sieve-ir-v1.0-retrospective.html">SIEVE IR v1.0 Retrospective</a></li>
+                  
+                
+                  
+                    <li><a href="/wizkit-blog/2021/09/20/introducing-the-sieve-ir.html">Introducing the SIEVE Intermediate Representation</a></li>
+                  
+                
+                </ul>
+              </li>
+            
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+      
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+            
+              <li>
+                <a href="/wizkit-blog/tag/circuit-ir
+">
+                  Tag: Circuit-IR
+                </a>
+                <ul>
+                
+                  
+                    <li><a href="/wizkit-blog/2023/07/13/sieve-circuit-ir-retrospective.html">Introducing the SIEVE Circuit-IR: Retrospective</a></li>
+                  
+                
+                  
+                    <li><a href="/wizkit-blog/2023/07/11/sieve-circuit-ir-plugins.html">Introducing the SIEVE Circuit-IR: Plugins</a></li>
+                  
+                
+                  
+                
+                  
+                    <li><a href="/wizkit-blog/2023/07/07/sieve-circuit-ir-multi-types-conversions.html">Introducing the SIEVE Circuit-IR: Multiple Types and Conversions</a></li>
+                  
+                
+                  
+                    <li><a href="/wizkit-blog/2023/07/06/introducing-the-sieve-circuit-ir-basics.html">Introducing the SIEVE Circuit-IR: Basics</a></li>
+                  
+                
+                </ul>
+              </li>
+            
+          
+        
+          
+        
+      
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+            
+              <li>
+                <a href="/wizkit-blog/tag/v2-1-0
+">
+                  Tag: v2.1.0
+                </a>
+                <ul>
+                
+                  
+                    <li><a href="/wizkit-blog/2023/07/13/sieve-circuit-ir-retrospective.html">Introducing the SIEVE Circuit-IR: Retrospective</a></li>
+                  
+                
+                  
+                    <li><a href="/wizkit-blog/2023/07/11/sieve-circuit-ir-plugins.html">Introducing the SIEVE Circuit-IR: Plugins</a></li>
+                  
+                
+                  
+                
+                  
+                    <li><a href="/wizkit-blog/2023/07/07/sieve-circuit-ir-multi-types-conversions.html">Introducing the SIEVE Circuit-IR: Multiple Types and Conversions</a></li>
+                  
+                
+                  
+                    <li><a href="/wizkit-blog/2023/07/06/introducing-the-sieve-circuit-ir-basics.html">Introducing the SIEVE Circuit-IR: Basics</a></li>
+                  
+                
+                </ul>
+              </li>
+            
+          
+        
+      
+      </ul>
+    </nav>
+    
+</article>
+
+</main>
+
+    <footer>
+      
+        <p id="distributionStatement">
+          <strong>Distribution Statement A:</strong> Approved for Public Release, Distribution Unlimited.
+        </p>
+      
+      <p>
+        Copyright &copy; 2023, Stealth Software Technologies, Inc.
+        All Rights Reserved.
+      </p>
+      
+        <p id="acknowledgement">
+          This research was developed with funding from the Defense Advanced Research Projects Agency (DARPA) under Contract No. HR001120C0087. The views, opinions, and/or findings expressed are those of the author(s) and should not be interpreted as representing the official views or policies of the Department of Defense or the U.S. Government.
+        </p>
+      
+
+      <a href="https://www.stealthsoftwareinc.com" id="bottomLogoImg">
+        <img
+          src="/wizkit-blog/assets/icons/tetra-solid-400x100.png"
+          alt="Stealth Software Technologies Home Page" /></a>
+
+      
+        <nav>
+          <strong>Navigation</strong>
+          
+            <br />
+            <a href="/wizkit-blog/">About</a>
+          
+            <br />
+            <a href="/wizkit-blog/blog.html">Blog</a>
+          
+            <br />
+            <a href="mailto:team-wizkit@stealthsoftwareinc.com">Contact</a>
+          
+        </nav>
+      
+    </footer>
+  </body>
+</html>
+

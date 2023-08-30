@@ -75,6 +75,18 @@
 
     <li>
 
+      <a href="/wizkit-blog/tag/v1-0-1
+">v1.0.1</a>
+    </li>
+
+    <li>
+
+      <a href="/wizkit-blog/tag/outdated
+">outdated</a>
+    </li>
+
+    <li>
+
       <a href="/wizkit-blog/tag/retrospective
 ">Retrospective</a>
     </li>
@@ -87,13 +99,251 @@
 
     <li>
 
+      <a href="/wizkit-blog/tag/but-still-super-cools
+">but still super cools</a>
+    </li>
+
+    <li>
+
       <a href="/wizkit-blog/tag/emp
 ">EMP</a>
+    </li>
+
+    <li>
+
+      <a href="/wizkit-blog/tag/circuits
+">circuits</a>
+    </li>
+
+    <li>
+
+      <a href="/wizkit-blog/tag/simple-circuits
+">simple circuits</a>
+    </li>
+
+    <li>
+
+      <a href="/wizkit-blog/tag/circuit-ir
+">Circuit-IR</a>
+    </li>
+
+    <li>
+
+      <a href="/wizkit-blog/tag/v2-1-0
+">v2.1.0</a>
     </li>
 
   </ul>
 </nav>
 
+
+  <hr />
+  <article>
+    <h2><a href="/wizkit-blog/2023/07/13/sieve-circuit-ir-retrospective.html">Introducing the SIEVE Circuit-IR: Retrospective</a></h2>
+    <p>
+  <strong>Written:</strong>
+  <time datetime="2023-07-13 00:00:00 -0400">2023-07-13</time>,
+
+    <strong>Published:</strong>
+    <time datetime="2023-08-30"> 2023-08-30</time>,
+
+  <strong>Author:</strong> Kimberlee Model,
+
+    <strong>Tags:</strong>
+
+      <a href="/wizkit-blog/tag/sieve-ir
+">SIEVE IR</a>,
+
+      <a href="/wizkit-blog/tag/circuit-ir
+">Circuit-IR</a>,
+
+      <a href="/wizkit-blog/tag/v2-1-0
+">v2.1.0</a>,
+
+      <a href="/wizkit-blog/tag/retrospective
+">Retrospective</a>,
+
+
+</p>
+
+
+    <div class="paragraph">
+<p>In prior posts to this blog, we&#8217;ve certainly aired our grievances with the prior IR release (v1, whereas we&#8217;re now at v2).
+You may want to go back and skim <a href="2021-11-01-sieve-ir-v1.0-retrospective.adoc">the previous retrospective</a> and our <a href="2021-11-19-BOLT-two-pass-interpreter.adoc">BOLT fast interpreter</a>.
+But if you don&#8217;t want to review those, IR1&#8217;s (IR1 was the old IR&#8217;s code name) memory layout was completely disorganized, and some of its higher level features proved difficult (<code>@switch</code>) or slow (<code>@for</code>) to implement.
+We spent a bit of time developing the BOLT interpreter with a few tricks for greatly accelerating how loops could be processed.</p>
+</div>
+  </article>
+
+  <hr />
+  <article>
+    <h2><a href="/wizkit-blog/2023/07/11/sieve-circuit-ir-plugins.html">Introducing the SIEVE Circuit-IR: Plugins</a></h2>
+    <p>
+  <strong>Written:</strong>
+  <time datetime="2023-07-11 00:00:00 -0400">2023-07-11</time>,
+
+    <strong>Published:</strong>
+    <time datetime="2023-08-30"> 2023-08-30</time>,
+
+  <strong>Author:</strong> Kimberlee Model,
+
+    <strong>Tags:</strong>
+
+      <a href="/wizkit-blog/tag/sieve-ir
+">SIEVE IR</a>,
+
+      <a href="/wizkit-blog/tag/circuit-ir
+">Circuit-IR</a>,
+
+      <a href="/wizkit-blog/tag/v2-1-0
+">v2.1.0</a>,
+
+
+</p>
+
+
+    <div class="paragraph">
+<p>During development of the IR, the SIEVE Program sort of decided that circuits are not expressive enough to express certain functionality.
+For example, <a href="/wizkit-blog/2023/05/11/simulating-bool-in-GFp.html">the comparison and division operations</a> previously described on this blog cannot be encoded with the IR because they require plaintext computations to be performed and passed into the circuit.
+Certainly the frontend could do that, but so could the backend&#8201;&#8212;&#8201;and many already can, with further tricks that a frontend can&#8217;t reliably expect to exist.
+Hence, we created the plugin system to enable backends to implement certain functionalities on their own and provide an interface through the IR.</p>
+</div>
+  </article>
+
+  <hr />
+  <article>
+    <h2><a href="/wizkit-blog/2023/07/10/sieve-circuit-ir-functions.html">Introducing the SIEVE Circuit-IR: Functions</a></h2>
+    <p>
+  <strong>Written:</strong>
+  <time datetime="2023-07-10 00:00:00 -0400">2023-07-10</time>,
+
+    <strong>Published:</strong>
+    <time datetime="2023-08-30"> 2023-08-30</time>,
+
+  <strong>Author:</strong> Kimberlee Model,
+
+    <strong>Tags:</strong>
+
+      <a href="/wizkit-blog/tag/sieve-ir
+">SIEVE IR</a>,
+
+      <a href="/wizkit-blog/tag/circuit-ir
+">Circuit-IR</a>,
+
+      <a href="/wizkit-blog/tag/v2-1-0
+">v2.1.0</a>,
+
+
+</p>
+
+
+    <div class="paragraph">
+<p>The SIEVE IR&#8217;s function gates will encapsulate a subcircuit so it may be reused many times over.
+Doing this can drastically reduce the size of a circuit.
+This may seem unimportant, considering how an interactive proof is likely to have communication proportional to the number of gates, however IO of the relation has proved to be a bottleneck in the past, and some relations have taken terabytes of space.
+So, its worth it to attempt to compress the circuit as much as possible.</p>
+</div>
+  </article>
+
+  <hr />
+  <article>
+    <h2><a href="/wizkit-blog/2023/07/07/sieve-circuit-ir-multi-types-conversions.html">Introducing the SIEVE Circuit-IR: Multiple Types and Conversions</a></h2>
+    <p>
+  <strong>Written:</strong>
+  <time datetime="2023-07-07 00:00:00 -0400">2023-07-07</time>,
+
+    <strong>Published:</strong>
+    <time datetime="2023-08-30"> 2023-08-30</time>,
+
+  <strong>Author:</strong> Kimberlee Model,
+
+    <strong>Tags:</strong>
+
+      <a href="/wizkit-blog/tag/sieve-ir
+">SIEVE IR</a>,
+
+      <a href="/wizkit-blog/tag/circuit-ir
+">Circuit-IR</a>,
+
+      <a href="/wizkit-blog/tag/v2-1-0
+">v2.1.0</a>,
+
+
+</p>
+
+
+    <div class="paragraph">
+<p>In this series, we are examining the new SIEVE Circuit-IR.
+This installment will examine its type system and how it enables multiple types to be combined within the same relation.</p>
+</div>
+  </article>
+
+  <hr />
+  <article>
+    <h2><a href="/wizkit-blog/2023/07/06/introducing-the-sieve-circuit-ir-basics.html">Introducing the SIEVE Circuit-IR: Basics</a></h2>
+    <p>
+  <strong>Written:</strong>
+  <time datetime="2023-07-06 00:00:00 -0400">2023-07-06</time>,
+
+    <strong>Published:</strong>
+    <time datetime="2023-08-30"> 2023-08-30</time>,
+
+  <strong>Author:</strong> Kimberlee Model,
+
+    <strong>Tags:</strong>
+
+      <a href="/wizkit-blog/tag/sieve-ir
+">SIEVE IR</a>,
+
+      <a href="/wizkit-blog/tag/circuit-ir
+">Circuit-IR</a>,
+
+      <a href="/wizkit-blog/tag/v2-1-0
+">v2.1.0</a>,
+
+
+</p>
+
+
+    <div class="paragraph">
+<p>The <a href="https://www.darpa.mil/program/securing-information-for-encrypted-verification-and-evaluation">DARPA SIEVE Program</a> has been developing the <a href="https://github.com/sieve-zk/ir">SIEVE Intermediate Representation</a> for about three years, and we recently achieved our second public release: the Circuit Intermediate Representation.
+As one of the primary developers of it, team Wizkit will again blog about its development and workings.
+Today we&#8217;ll start a series overviewing the SIEVE Circuit Intermediate Representation (Circuit-IR) language and semantics, and of course our own <a href="https://stealthsoftwareinc.github.io/wiztoolkit">WizToolKit library</a> for this revision of the Circuit-IR.</p>
+</div>
+  </article>
+
+  <hr />
+  <article>
+    <h2><a href="/wizkit-blog/2023/05/11/simulating-bool-in-GFp.html">Simulating Boolean Computations with GF(p) Circuits</a></h2>
+    <p>
+  <strong>Written:</strong>
+  <time datetime="2023-05-11 00:00:00 -0400">2023-05-11</time>,
+
+    <strong>Published:</strong>
+    <time datetime="2023-08-30"> 2023-08-30</time>,
+
+  <strong>Author:</strong> Kimberlee Model,
+
+    <strong>Tags:</strong>
+
+      <a href="/wizkit-blog/tag/circuits
+">circuits</a>,
+
+      <a href="/wizkit-blog/tag/simple-circuits
+">simple circuits</a>,
+
+
+</p>
+
+
+    <div class="paragraph">
+<p>In ZK Proofs it is difficult to compute some common operations because the typical <code>GF(p)</code> operations only allow two useful operations: addition and multiplication.
+From these two simple operations, many others can be built, but many others cannot.
+For example, exact equality or inequality can take advantage of <a href="https://en.wikipedia.org/wiki/Fermat%27s_little_theorem">Fermat&#8217;s Little Theorem</a>, and from this we can build multiplexers to implement conditionals.
+But comparative inequalities (less than, greater than, etc) are still impossible without further work.
+In this post we&#8217;ll start by simulating Boolean logic in <code>GF(p)</code>, then build up to comparison operations, and show how we can use these to simulate integer division.</p>
+</div>
+  </article>
 
   <hr />
   <article>
@@ -111,6 +361,9 @@
 
       <a href="/wizkit-blog/tag/sieve-ir
 ">SIEVE IR</a>,
+
+      <a href="/wizkit-blog/tag/outdated
+">outdated</a>,
 
 
 </p>
@@ -146,6 +399,9 @@ In the upcoming months the SIEVE Program will internally agree upon a final draf
       <a href="/wizkit-blog/tag/emp
 ">EMP</a>,
 
+      <a href="/wizkit-blog/tag/outdated
+">outdated</a>,
+
 
 </p>
 
@@ -173,6 +429,9 @@ Well, here&#8217;s where to start: Team Wizkit has open sourced <a href="https:/
 
       <a href="/wizkit-blog/tag/sieve-ir
 ">SIEVE IR</a>,
+
+      <a href="/wizkit-blog/tag/outdated
+">outdated</a>,
 
 
 </p>
@@ -206,6 +465,15 @@ In this blog post, we put the results of the critique to good use in making desi
       <a href="/wizkit-blog/tag/wiztoolkit
 ">WizToolKit</a>,
 
+      <a href="/wizkit-blog/tag/v1-0-1
+">v1.0.1</a>,
+
+      <a href="/wizkit-blog/tag/outdated
+">outdated</a>,
+
+      <a href="/wizkit-blog/tag/but-still-super-cools
+">but still super cools</a>,
+
 
 </p>
 
@@ -238,6 +506,12 @@ The second component is the topic of today&#8217;s post; it&#8217;s the time spe
       <a href="/wizkit-blog/tag/retrospective
 ">Retrospective</a>,
 
+      <a href="/wizkit-blog/tag/v1-0-1
+">v1.0.1</a>,
+
+      <a href="/wizkit-blog/tag/outdated
+">outdated</a>,
+
 
 </p>
 
@@ -267,6 +541,12 @@ However, we&#8217;d also like to acknowledge that the IR has its flaws and highl
       <a href="/wizkit-blog/tag/sieve-ir
 ">SIEVE IR</a>,
 
+      <a href="/wizkit-blog/tag/v1-0-1
+">v1.0.1</a>,
+
+      <a href="/wizkit-blog/tag/outdated
+">outdated</a>,
+
 
 </p>
 
@@ -288,7 +568,7 @@ It is our hope that this will ease you into using the SIEVE IR in your own work,
         </p>
       
       <p>
-        Copyright &copy; 2022, Stealth Software Technologies, Inc.
+        Copyright &copy; 2023, Stealth Software Technologies, Inc.
         All Rights Reserved.
       </p>
       

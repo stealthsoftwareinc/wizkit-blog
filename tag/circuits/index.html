@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>EMP - Team Wizkit</title>
+    <title>circuits - Team Wizkit</title>
     <link rel="stylesheet"
         href="/wizkit-blog/assets/css/fonts.css" />
     <link rel="stylesheet"
@@ -16,18 +16,18 @@
 
     <link type="application/atom+xml" rel="alternate" href="https://stealthsoftwareinc.github.io/wizkit-blog/feed.xml" title="Team Wizkit" />
     <!-- Begin Jekyll SEO tag v2.8.0 -->
-<title>EMP | Team Wizkit</title>
+<title>circuits | Team Wizkit</title>
 <meta name="generator" content="Jekyll v4.2.2" />
-<meta property="og:title" content="EMP" />
+<meta property="og:title" content="circuits" />
 <meta property="og:locale" content="en_US" />
-<link rel="canonical" href="https://stealthsoftwareinc.github.io/wizkit-blog/tag/emp/" />
-<meta property="og:url" content="https://stealthsoftwareinc.github.io/wizkit-blog/tag/emp/" />
+<link rel="canonical" href="https://stealthsoftwareinc.github.io/wizkit-blog/tag/circuits/" />
+<meta property="og:url" content="https://stealthsoftwareinc.github.io/wizkit-blog/tag/circuits/" />
 <meta property="og:site_name" content="Team Wizkit" />
 <meta property="og:type" content="website" />
 <meta name="twitter:card" content="summary" />
-<meta property="twitter:title" content="EMP" />
+<meta property="twitter:title" content="circuits" />
 <script type="application/ld+json">
-{"@context":"https://schema.org","@type":"WebPage","headline":"EMP","url":"https://stealthsoftwareinc.github.io/wizkit-blog/tag/emp/"}</script>
+{"@context":"https://schema.org","@type":"WebPage","headline":"circuits","url":"https://stealthsoftwareinc.github.io/wizkit-blog/tag/circuits/"}</script>
 <!-- End Jekyll SEO tag -->
 
 
@@ -59,41 +59,37 @@
       </nav>
     </header>
     <main id="main" tabindex="-1">
-  <h1>Tag: EMP</h1>
+  <h1>Tag: circuits</h1>
 
-  <h2><a href="/wizkit-blog/2022/08/04/getting-started-with-the-ir.html">Getting Started with the SIEVE IR</a></h2>
+  <h2><a href="/wizkit-blog/2023/05/11/simulating-bool-in-GFp.html">Simulating Boolean Computations with GF(p) Circuits</a></h2>
   <article>
     <p>
   <strong>Written:</strong>
-  <time datetime="2022-08-04 00:00:00 -0400">2022-08-04</time>,
+  <time datetime="2023-05-11 00:00:00 -0400">2023-05-11</time>,
   
     <strong>Published:</strong>
-    <time datetime="2022-11-14"> 2022-11-14</time>,
+    <time datetime="2023-08-30"> 2023-08-30</time>,
   
   <strong>Author:</strong> Kimberlee Model,
   
     <strong>Tags:</strong>
     
-      <a href="/wizkit-blog/tag/wiztoolkit
-">WizToolKit</a>,
+      <a href="/wizkit-blog/tag/circuits
+">circuits</a>,
     
-      <a href="/wizkit-blog/tag/sieve-ir
-">SIEVE IR</a>,
-    
-      <a href="/wizkit-blog/tag/emp
-">EMP</a>,
-    
-      <a href="/wizkit-blog/tag/outdated
-">outdated</a>,
+      <a href="/wizkit-blog/tag/simple-circuits
+">simple circuits</a>,
     
   
 </p>
 
 
     <div class="paragraph">
-<p>By now, you&#8217;ve read up on the SIEVE IR, you&#8217;re interested in ZK, and you&#8217;re ready to try it out the IR, but you&#8217;re not sure where to start.
-For a ZK frontend, the IR opens up a world of backends, while for a backend it enables a wide variety of users to leverage your backend.
-Well, here&#8217;s where to start: Team Wizkit has open sourced <a href="https://github.com/stealthsoftwareinc/wiztoolkit">WizToolKit</a> a collection of tools and libraries for working with the IR and <a href="https://github.com/emp-toolkit/emp-ir">EMP-IR</a> a ZK Backend which uses the IR.</p>
+<p>In ZK Proofs it is difficult to compute some common operations because the typical <code>GF(p)</code> operations only allow two useful operations: addition and multiplication.
+From these two simple operations, many others can be built, but many others cannot.
+For example, exact equality or inequality can take advantage of <a href="https://en.wikipedia.org/wiki/Fermat%27s_little_theorem">Fermat&#8217;s Little Theorem</a>, and from this we can build multiplexers to implement conditionals.
+But comparative inequalities (less than, greater than, etc) are still impossible without further work.
+In this post we&#8217;ll start by simulating Boolean logic in <code>GF(p)</code>, then build up to comparison operations, and show how we can use these to simulate integer division.</p>
 </div>
   </article>
 

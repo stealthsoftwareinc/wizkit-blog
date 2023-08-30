@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Introducing the SIEVE Circuit-IR: Basics - Team Wizkit</title>
+    <link rel="stylesheet"
+        href="/wizkit-blog/assets/css/fonts.css" />
+    <link rel="stylesheet"
+        href="/wizkit-blog/assets/css/layout.css" />
+    <link rel="stylesheet"
+        href="/wizkit-blog/assets/css/content.css" />
+
+    <link rel="shortcut icon" type="image/png"
+        href="/wizkit-blog/assets/icons/tetra-solid-32x32.png" />
+
+    <link type="application/atom+xml" rel="alternate" href="https://stealthsoftwareinc.github.io/wizkit-blog/feed.xml" title="Team Wizkit" />
+    <!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Introducing the SIEVE Circuit-IR: Basics | Team Wizkit</title>
+<meta name="generator" content="Jekyll v4.2.2" />
+<meta property="og:title" content="Introducing the SIEVE Circuit-IR: Basics" />
+<meta name="author" content="Kimberlee Model" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="The DARPA SIEVE Program has been developing the SIEVE Intermediate Representation for about three years, and we recently achieved our second public release: the Circuit Intermediate Representation. As one of the primary developers of it, team Wizkit will again blog about its development and workings. Today we&#8217;ll start a series overviewing the SIEVE Circuit Intermediate Representation (Circuit-IR) language and semantics, and of course our own WizToolKit library for this revision of the Circuit-IR." />
+<meta property="og:description" content="The DARPA SIEVE Program has been developing the SIEVE Intermediate Representation for about three years, and we recently achieved our second public release: the Circuit Intermediate Representation. As one of the primary developers of it, team Wizkit will again blog about its development and workings. Today we&#8217;ll start a series overviewing the SIEVE Circuit Intermediate Representation (Circuit-IR) language and semantics, and of course our own WizToolKit library for this revision of the Circuit-IR." />
+<link rel="canonical" href="https://stealthsoftwareinc.github.io/wizkit-blog/2023/07/06/introducing-the-sieve-circuit-ir-basics.html" />
+<meta property="og:url" content="https://stealthsoftwareinc.github.io/wizkit-blog/2023/07/06/introducing-the-sieve-circuit-ir-basics.html" />
+<meta property="og:site_name" content="Team Wizkit" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2023-07-06T00:00:00-04:00" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="Introducing the SIEVE Circuit-IR: Basics" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Kimberlee Model"},"dateModified":"2023-07-06T00:00:00-04:00","datePublished":"2023-07-06T00:00:00-04:00","description":"The DARPA SIEVE Program has been developing the SIEVE Intermediate Representation for about three years, and we recently achieved our second public release: the Circuit Intermediate Representation. As one of the primary developers of it, team Wizkit will again blog about its development and workings. Today we&#8217;ll start a series overviewing the SIEVE Circuit Intermediate Representation (Circuit-IR) language and semantics, and of course our own WizToolKit library for this revision of the Circuit-IR.","headline":"Introducing the SIEVE Circuit-IR: Basics","mainEntityOfPage":{"@type":"WebPage","@id":"https://stealthsoftwareinc.github.io/wizkit-blog/2023/07/06/introducing-the-sieve-circuit-ir-basics.html"},"url":"https://stealthsoftwareinc.github.io/wizkit-blog/2023/07/06/introducing-the-sieve-circuit-ir-basics.html"}</script>
+<!-- End Jekyll SEO tag -->
+
+
+    <script>0</script>
+  </head>
+  <body>
+    <header>
+      <nav id="topNav">
+        <a href="#main" id="jumpMain">Jump to Main</a>
+        <a href="https://www.stealthsoftwareinc.com" id="logoImg">
+          <img
+            src="/wizkit-blog/assets/icons/tetra-solid-100x100.png"
+            alt="Stealth Software Technologies Home Page" /></a>
+        <a href="/wizkit-blog/" id="titleLink">Team Wizkit</a>
+        <span id="spacer">&nbsp;</span>
+        
+          
+            <a href="/wizkit-blog/"
+              
+              >about</a>
+          
+        
+          
+            <a href="/wizkit-blog/blog.html"
+              
+              >blog</a>
+          
+        
+      </nav>
+    </header>
+    <main id="main" tabindex="-1">
+  <article>
+  <h1> Introducing the SIEVE Circuit-IR: Basics</h1>
+  <p>
+  <strong>Written:</strong>
+  <time datetime="2023-07-06 00:00:00 -0400">2023-07-06</time>,
+  
+    <strong>Published:</strong>
+    <time datetime="2023-08-30"> 2023-08-30</time>,
+  
+  <strong>Author:</strong> Kimberlee Model,
+  
+    <strong>Tags:</strong>
+    
+      <a href="/wizkit-blog/tag/sieve-ir
+">SIEVE IR</a>,
+    
+      <a href="/wizkit-blog/tag/circuit-ir
+">Circuit-IR</a>,
+    
+      <a href="/wizkit-blog/tag/v2-1-0
+">v2.1.0</a>,
+    
+  
+</p>
+
+
+  <hr />
+  <div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>The <a href="https://www.darpa.mil/program/securing-information-for-encrypted-verification-and-evaluation">DARPA SIEVE Program</a> has been developing the <a href="https://github.com/sieve-zk/ir">SIEVE Intermediate Representation</a> for about three years, and we recently achieved our second public release: the Circuit Intermediate Representation.
+As one of the primary developers of it, team Wizkit will again blog about its development and workings.
+Today we&#8217;ll start a series overviewing the SIEVE Circuit Intermediate Representation (Circuit-IR) language and semantics, and of course our own <a href="https://stealthsoftwareinc.github.io/wiztoolkit">WizToolKit library</a> for this revision of the Circuit-IR.</p>
+</div>
+<div class="paragraph">
+<p>An Intermediate Representation (IR) is a term borrowed from the field of programming language development, a sensible borrow for what is essentially "programmable cryptography".
+Typically, an IR is the representation of a program within a compiler: a common understanding of the program between the frontend (which handles the input language) and backend (which outputs machine code).
+In the SIEVE Program, some teams have developed frontends which accept various input languages, while other teams have developed backends which prove statements in Zero Knowledge, rather than emitting machine code.
+The SIEVE Circuit-IR is a common understanding of ZK statements between SIEVE frontends and backends.</p>
+</div>
+<div class="paragraph">
+<p>Throughout this series "IR" will refer specifically to the SIEVE Circuit-IR.</p>
+</div>
+<div class="paragraph">
+<p>Although this post is about a revision to the SIEVE IR, we don&#8217;t expect you to have read prior posts in order to read this one.
+You can (and probably should) read this post as if you&#8217;ve never heard of the SIEVE IR before.
+We do expect you to have a basic familiarity with Zero-Knowledge Proofs (ZK) and finite field arithmetic in GF(<em>p</em>).</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="the-zero-knowledge-setting">The Zero Knowledge Setting</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>In Zero Knowledge we have two parties: the prover and the verifier.
+The prover has some secret and wishes to convince the verifier that some falsifiable fact about their secret is true, without revealing the secret.
+For example, a company may have a user database which the wish to keep secret to protect the privacy of their patrons.
+But regulators may wish to inspect the user database to ensure that the company doesn&#8217;t collect information about children below the age of 13.
+Instead of opening up and showing their user database to the regulators, the company can make a zero knowledge proof stating that each user&#8217;s age is greater than 13.</p>
+</div>
+<div class="paragraph">
+<p>This example illustrates all the fundamental components of the inputs to a ZK Proof.
+The prover has a <em>private input</em>&#8201;&#8212;&#8201;their user database.
+The prover and verifier both know a <em>public input</em>&#8201;&#8212;&#8201;the threshold age of 13 (new regulations could change this to 12 or 14, for example).
+Most importantly there is a <em>relation</em> which connects both inputs to form some falsifiable fact: that each user&#8217;s age is greater than the threshold.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="the-circuit">The Circuit</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The SIEVE-IR&#8217;s relation is based on circuits&#8201;&#8212;&#8201;gates connected by wires.
+Most gates produce one output wire, specifying a wire number for it to be referenced as inputs to subsequent gates.
+Gates have the form <code>$output &#8592; @operation($inputs&#8230;&#8203;);</code>, with the output wire on the left of an arrow, followed by an operation and a parenthesized list of inputs.
+Wire numbers are prefixed with a <code>$</code>, operations with an <code>@</code>, and numeric constants, where allowed, are surrounded by angle brackets (<code>&lt;12345&gt;</code>).
+Wire numbers are often consecutive, but do not need to be.</p>
+</div>
+<div class="paragraph">
+<p>Let&#8217;s introduce each gate through a quick example.
+We&#8217;ll prove that a triangle is a right triangle using the Pythagorean Theorem.
+Three side-lengths will be used to prove that <em>a</em><sup>2</sup> + <em>b</em><sup>2</sup> = <em>c</em><sup>2</sup>.</p>
+</div>
+<div class="sect2">
+<h3 id="input-gates-and-input-streams">Input Gates and Input Streams</h3>
+<div class="paragraph">
+<p>The first kind of gate you&#8217;ll encounter is an "input" gate.
+The IR represents the circuit&#8217;s <em>public and private inputs</em> using streams&#8201;&#8212;&#8201;sequences of values which the circuit may access one at at time.
+The IR has one stream for <em>private inputs</em> and another for <em>public</em> ones.
+The <code>$n &lt;- @public();</code> and <code>$n &lt;- @private();</code> gates will read the next wire from a stream and assign it to a wire.
+In our example, let&#8217;s read two public legs and the hypotenuse from the private input stream.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>$0 &lt;- @public(); // leg a
+$1 &lt;- @public(); // leg b
+$2 &lt;- @private(); // hypotenuse c</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The streams themselves are simply lists of values, preceded by a little bit of header information (the IR version, a public or private keyword, the prime field).</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 50%;">
+<col style="width: 50%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-bottom">Public Input Stream</th>
+<th class="tableblock halign-left valign-bottom">Private Input Stream</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-bottom"><div class="content"><div class="listingblock">
+<div class="content">
+<pre>@version 2.1.0;
+public_input;
+@type field 127;
+@begin
+  &lt;3&gt;; // leg a
+  &lt;4&gt;; // leg b
+@end</pre>
+</div>
+</div></div></td>
+<td class="tableblock halign-left valign-bottom"><div class="content"><div class="listingblock">
+<div class="content">
+<pre>@version 2.1.0;
+private_input;
+@type field 127;
+@begin
+  &lt;5&gt;; // hypotenuse c
+
+@end</pre>
+</div>
+</div></div></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect2">
+<h3 id="arithmetic-gates">Arithmetic Gates</h3>
+<div class="paragraph">
+<p>Arithmetic gates are the main workers of all circuits.
+The <code>@mul</code> and <code>@add</code> input two wires and output either their product or sum.
+We can use <code>@mul</code> to square each input, and <code>@add</code> to add <em>A</em> and <em>B</em>.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>$3 &lt;- @mul($0, $0); // A**2
+$4 &lt;- @mul($1, $1); // B**2
+$5 &lt;- @mul($2, $2); // C**2
+
+$6 &lt;- @add($3, $4); // A**2 + B**2</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Built into the IR, we can only compare wires to 0, not to each other.
+Therefore, we must rewrite <em>A</em><sup>2</sup> + <em>B</em><sup>2</sup> = <em>C</em><sup>2</sup> to become <em>A</em><sup>2</sup> + <em>B</em><sup>2</sup> - <em>C</em><sup>2</sup> = 0.
+To perform subtraction in the IR we multiply the right operand by <em>P</em> - 1&#8201;&#8212;&#8201;-1 in a finite field&#8201;&#8212;&#8201;and then use addition.
+To multiply by a constant we use the <code>$output &lt;- @mulc($input, &lt;constant&gt;);</code> gate.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>$7 &lt;- @mulc($5, &lt;126&gt;); // If our prime is 127, then 126 == -1
+$8 &lt;- @add($6, $7); // A**2 + B**2 - C**2</pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="assert-zero">Assert Zero</h3>
+<div class="paragraph">
+<p>The last gate we need is <code>@assert_zero($input);</code>.
+This gate proves that a wire is (or is not) equal to zero.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>@assert_zero($8);</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Putting this together, along with a header (again the IR version, a public or private keyword, the prime field) we get the following circuit.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>@version 2.1.0;
+public_input;
+@type field 127;
+@begin
+  $0 &lt;- @public(); // leg A
+  $1 &lt;- @public(); // leg B
+  $2 &lt;- @private(); // hypotenuse C
+
+  $3 &lt;- @mul($0, $0); // A**2
+  $4 &lt;- @mul($1, $1); // B**2
+  $5 &lt;- @mul($2, $2); // C**2
+
+  $6 &lt;- @add($3, $4); // A**2 + B**2
+
+  $7 &lt;- @mulc($5, &lt;126&gt;); // If our prime is 127, then 126 == -1
+  $8 &lt;- @add($6, $7); // A**2 + B**2 - C**2
+
+  @assert_zero($8);
+@end</pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="wiztoolkit">WizToolKit</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>You can give these circuits a try with <a href="https://stealthsoftwareinc.github.io/wiztoolkit/docs/v2.1.0/4_tools/firealarm.html">WizToolKit&#8217;s <code>wtk-firealarm</code> tool</a>.
+WizToolKit is a library for working with the SIEVE IR, and the <code>wtk-firealarm</code> tool runs proofs in the Non-ZK setting&#8201;&#8212;&#8201;good for testing, debugging, and trying things out.
+You can <a href="https://github.com/stealthsoftwareinc/wiztoolkit">download WizToolKit</a> and install with <code>make &amp;&amp; sudo make install</code>.</p>
+</div>
+<div class="paragraph">
+<p>If you&#8217;re a ZK backend developer you can have a look at our <a href="https://stealthsoftwareinc.github.io/wiztoolkit/docs/v2.1.0/2_nails.html">integration tutorials</a> and <a href="https://stealthsoftwareinc.github.io/wiztoolkit/docs/v2.1.0/6_sample_backends/0_intro.html">backend starter code</a>.
+Regardless of whether or not you develop ZK backends, you can take a look at some of our <a href="https://stealthsoftwareinc.github.io/wiztoolkit/docs/v2.1.0/5_testcases.html">test circuit generators</a>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="conclusion">Conclusion</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>This post showed off the basics of using the SIEVE Circuit-IR.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>The numbered wiring system to connect gates,</p>
+</li>
+<li>
+<p>Accepting inputs from public and private streams,</p>
+</li>
+<li>
+<p>And using arithmetic gates to define a relation.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>In upcoming posts we&#8217;ll take a look at more aspects of the IR: multi field circuits/field switching, its type system, and how functions can be defined to increase scalability.</p>
+</div>
+<hr>
+<div class="sidebarblock">
+<div class="content">
+<div class="paragraph">
+<p>This research was developed with funding from the Defense Advanced Research Projects Agency (DARPA) under Contract No. HR001120C0087.
+The views, opinions, and/or findings expressed are those of the author(s) and should not be interpreted as representing the official views or policies of the Department of Defense or the U.S. Government.</p>
+</div>
+<div class="paragraph">
+<p><strong>Distribution Statement "A":</strong> Approved for Public Release, Distribution Unlimited</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+  <hr />
+  
+    <nav id="similarContent">
+      <h2 class="eyebrow">Similar Content</h2>
+      <ul>
+      
+        
+          
+            
+              <li>
+                <a href="/wizkit-blog/tag/sieve-ir
+">
+                  Tag: SIEVE IR
+                </a>
+                <ul>
+                
+                  
+                    <li><a href="/wizkit-blog/2023/07/13/sieve-circuit-ir-retrospective.html">Introducing the SIEVE Circuit-IR: Retrospective</a></li>
+                  
+                
+                  
+                    <li><a href="/wizkit-blog/2023/07/11/sieve-circuit-ir-plugins.html">Introducing the SIEVE Circuit-IR: Plugins</a></li>
+                  
+                
+                  
+                    <li><a href="/wizkit-blog/2023/07/10/sieve-circuit-ir-functions.html">Introducing the SIEVE Circuit-IR: Functions</a></li>
+                  
+                
+                  
+                    <li><a href="/wizkit-blog/2023/07/07/sieve-circuit-ir-multi-types-conversions.html">Introducing the SIEVE Circuit-IR: Multiple Types and Conversions</a></li>
+                  
+                
+                  
+                
+                  
+                    <li><a href="/wizkit-blog/2022/09/26/evolving-the-sieve-ir-our-concrete-proposal.html">Evolving the SIEVE IR: Our Concrete Proposal</a></li>
+                  
+                
+                  
+                    <li><a href="/wizkit-blog/2022/08/04/getting-started-with-the-ir.html">Getting Started with the SIEVE IR</a></li>
+                  
+                
+                  
+                    <li><a href="/wizkit-blog/2022/05/26/replacing-the-sieve-ir.html">Replacing the SIEVE Intermediate Representation</a></li>
+                  
+                
+                  
+                    <li><a href="/wizkit-blog/2021/11/19/BOLT-two-pass-interpreter.html">BOLT, Two Pass IR Interpreter</a></li>
+                  
+                
+                  
+                    <li><a href="/wizkit-blog/2021/11/01/sieve-ir-v1.0-retrospective.html">SIEVE IR v1.0 Retrospective</a></li>
+                  
+                
+                  
+                    <li><a href="/wizkit-blog/2021/09/20/introducing-the-sieve-ir.html">Introducing the SIEVE Intermediate Representation</a></li>
+                  
+                
+                </ul>
+              </li>
+            
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+      
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+            
+              <li>
+                <a href="/wizkit-blog/tag/circuit-ir
+">
+                  Tag: Circuit-IR
+                </a>
+                <ul>
+                
+                  
+                    <li><a href="/wizkit-blog/2023/07/13/sieve-circuit-ir-retrospective.html">Introducing the SIEVE Circuit-IR: Retrospective</a></li>
+                  
+                
+                  
+                    <li><a href="/wizkit-blog/2023/07/11/sieve-circuit-ir-plugins.html">Introducing the SIEVE Circuit-IR: Plugins</a></li>
+                  
+                
+                  
+                    <li><a href="/wizkit-blog/2023/07/10/sieve-circuit-ir-functions.html">Introducing the SIEVE Circuit-IR: Functions</a></li>
+                  
+                
+                  
+                    <li><a href="/wizkit-blog/2023/07/07/sieve-circuit-ir-multi-types-conversions.html">Introducing the SIEVE Circuit-IR: Multiple Types and Conversions</a></li>
+                  
+                
+                  
+                
+                </ul>
+              </li>
+            
+          
+        
+          
+        
+      
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+            
+              <li>
+                <a href="/wizkit-blog/tag/v2-1-0
+">
+                  Tag: v2.1.0
+                </a>
+                <ul>
+                
+                  
+                    <li><a href="/wizkit-blog/2023/07/13/sieve-circuit-ir-retrospective.html">Introducing the SIEVE Circuit-IR: Retrospective</a></li>
+                  
+                
+                  
+                    <li><a href="/wizkit-blog/2023/07/11/sieve-circuit-ir-plugins.html">Introducing the SIEVE Circuit-IR: Plugins</a></li>
+                  
+                
+                  
+                    <li><a href="/wizkit-blog/2023/07/10/sieve-circuit-ir-functions.html">Introducing the SIEVE Circuit-IR: Functions</a></li>
+                  
+                
+                  
+                    <li><a href="/wizkit-blog/2023/07/07/sieve-circuit-ir-multi-types-conversions.html">Introducing the SIEVE Circuit-IR: Multiple Types and Conversions</a></li>
+                  
+                
+                  
+                
+                </ul>
+              </li>
+            
+          
+        
+      
+      </ul>
+    </nav>
+    
+</article>
+
+</main>
+
+    <footer>
+      
+        <p id="distributionStatement">
+          <strong>Distribution Statement A:</strong> Approved for Public Release, Distribution Unlimited.
+        </p>
+      
+      <p>
+        Copyright &copy; 2023, Stealth Software Technologies, Inc.
+        All Rights Reserved.
+      </p>
+      
+        <p id="acknowledgement">
+          This research was developed with funding from the Defense Advanced Research Projects Agency (DARPA) under Contract No. HR001120C0087. The views, opinions, and/or findings expressed are those of the author(s) and should not be interpreted as representing the official views or policies of the Department of Defense or the U.S. Government.
+        </p>
+      
+
+      <a href="https://www.stealthsoftwareinc.com" id="bottomLogoImg">
+        <img
+          src="/wizkit-blog/assets/icons/tetra-solid-400x100.png"
+          alt="Stealth Software Technologies Home Page" /></a>
+
+      
+        <nav>
+          <strong>Navigation</strong>
+          
+            <br />
+            <a href="/wizkit-blog/">About</a>
+          
+            <br />
+            <a href="/wizkit-blog/blog.html">Blog</a>
+          
+            <br />
+            <a href="mailto:team-wizkit@stealthsoftwareinc.com">Contact</a>
+          
+        </nav>
+      
+    </footer>
+  </body>
+</html>
+
