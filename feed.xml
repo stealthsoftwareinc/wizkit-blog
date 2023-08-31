@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.2.2">Jekyll</generator><link href="https://stealthsoftwareinc.github.io/wizkit-blog/feed.xml" rel="self" type="application/atom+xml" /><link href="https://stealthsoftwareinc.github.io/wizkit-blog/" rel="alternate" type="text/html" /><updated>2023-08-30T16:01:39-04:00</updated><id>https://stealthsoftwareinc.github.io/wizkit-blog/feed.xml</id><title type="html">Team Wizkit</title><entry><title type="html">Introducing the SIEVE Circuit-IR: Retrospective</title><link href="https://stealthsoftwareinc.github.io/wizkit-blog/2023/07/13/sieve-circuit-ir-retrospective.html" rel="alternate" type="text/html" title="Introducing the SIEVE Circuit-IR: Retrospective" /><published>2023-07-13T00:00:00-04:00</published><updated>2023-07-13T00:00:00-04:00</updated><id>https://stealthsoftwareinc.github.io/wizkit-blog/2023/07/13/sieve-circuit-ir-retrospective</id><content type="html" xml:base="https://stealthsoftwareinc.github.io/wizkit-blog/2023/07/13/sieve-circuit-ir-retrospective.html"><![CDATA[<div class="paragraph">
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.3.2">Jekyll</generator><link href="https://stealthsoftwareinc.github.io/wizkit-blog/feed.xml" rel="self" type="application/atom+xml" /><link href="https://stealthsoftwareinc.github.io/wizkit-blog/" rel="alternate" type="text/html" /><updated>2023-08-31T16:35:49-04:00</updated><id>https://stealthsoftwareinc.github.io/wizkit-blog/feed.xml</id><title type="html">Team Wizkit</title><entry><title type="html">Introducing the SIEVE Circuit-IR: Retrospective</title><link href="https://stealthsoftwareinc.github.io/wizkit-blog/2023/07/13/sieve-circuit-ir-retrospective.html" rel="alternate" type="text/html" title="Introducing the SIEVE Circuit-IR: Retrospective" /><published>2023-07-13T00:00:00-04:00</published><updated>2023-07-13T00:00:00-04:00</updated><id>https://stealthsoftwareinc.github.io/wizkit-blog/2023/07/13/sieve-circuit-ir-retrospective</id><content type="html" xml:base="https://stealthsoftwareinc.github.io/wizkit-blog/2023/07/13/sieve-circuit-ir-retrospective.html"><![CDATA[<div class="paragraph">
 <p>In prior posts to this blog, we&#8217;ve certainly aired our grievances with the prior IR release (v1, whereas we&#8217;re now at v2).
 You may want to go back and skim <a href="2021-11-01-sieve-ir-v1.0-retrospective.adoc">the previous retrospective</a> and our <a href="2021-11-19-BOLT-two-pass-interpreter.adoc">BOLT fast interpreter</a>.
 But if you don&#8217;t want to review those, IR1&#8217;s (IR1 was the old IR&#8217;s code name) memory layout was completely disorganized, and some of its higher level features proved difficult (<code>@switch</code>) or slow (<code>@for</code>) to implement.
@@ -1054,8 +1054,8 @@ We&#8217;ll also use big-end first bit vectors, where relevant.</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="c"><span></span><span class="tok-k">const</span><span class="tok-w"> </span><span class="tok-kt">unsigned</span><span class="tok-w"> </span><span class="tok-kt">int</span><span class="tok-w"> </span><span class="tok-n">P</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-mi">101</span><span class="tok-p">;</span>
-<span class="tok-k">const</span><span class="tok-w"> </span><span class="tok-kt">unsigned</span><span class="tok-w"> </span><span class="tok-kt">int</span><span class="tok-w"> </span><span class="tok-n">P_WIDTH</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-mi">7</span><span class="tok-p">;</span></code></pre>
+<pre class="pygments highlight" style="background: #000000; color: #dddddd"><code data-lang="c"><span></span><span style="color: #ff0000">const</span><span style="color: #dddddd"> </span><span style="color: #ee82ee">unsigned</span><span style="color: #dddddd"> </span><span style="color: #ee82ee">int</span><span style="color: #dddddd"> P = 101;</span>
+<span style="color: #ff0000">const</span><span style="color: #dddddd"> </span><span style="color: #ee82ee">unsigned</span><span style="color: #dddddd"> </span><span style="color: #ee82ee">int</span><span style="color: #dddddd"> P_WIDTH = 7;</span></code></pre>
 </div>
 </div>
 </div>
@@ -1070,9 +1070,9 @@ We can take advantage of this to make a simple test proving to the verifier that
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="c"><span></span><span class="tok-kt">void</span><span class="tok-w"> </span><span class="tok-nf">assert_boolean</span><span class="tok-p">(</span><span class="tok-kt">unsigned</span><span class="tok-w"> </span><span class="tok-kt">int</span><span class="tok-w"> </span><span class="tok-n">v</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-p">{</span>
-<span class="tok-w">  </span><span class="tok-n">assert</span><span class="tok-p">(</span><span class="tok-mi">0</span><span class="tok-w"> </span><span class="tok-o">==</span><span class="tok-w"> </span><span class="tok-p">(</span><span class="tok-n">v</span><span class="tok-w"> </span><span class="tok-o">*</span><span class="tok-w"> </span><span class="tok-p">(</span><span class="tok-n">v</span><span class="tok-w"> </span><span class="tok-o">-</span><span class="tok-w"> </span><span class="tok-mi">1</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">%</span><span class="tok-w"> </span><span class="tok-n">P</span><span class="tok-p">));</span>
-<span class="tok-p">}</span></code></pre>
+<pre class="pygments highlight" style="background: #000000; color: #dddddd"><code data-lang="c"><span></span><span style="color: #ee82ee">void</span><span style="color: #dddddd"> </span><span style="color: #ffff00">assert_boolean</span><span style="color: #dddddd">(</span><span style="color: #ee82ee">unsigned</span><span style="color: #dddddd"> </span><span style="color: #ee82ee">int</span><span style="color: #dddddd"> v) {</span>
+<span style="color: #dddddd">  assert(0 == (v * (v - 1) % P));</span>
+<span style="color: #dddddd">}</span></code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -1130,9 +1130,9 @@ For any other value of <code>v</code>, it multiplies out to something non-zero.<
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="c"><span></span><span class="tok-kt">unsigned</span><span class="tok-w"> </span><span class="tok-kt">int</span><span class="tok-w"> </span><span class="tok-nf">bool_and</span><span class="tok-p">(</span><span class="tok-kt">unsigned</span><span class="tok-w"> </span><span class="tok-kt">int</span><span class="tok-w"> </span><span class="tok-n">l</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-kt">unsigned</span><span class="tok-w"> </span><span class="tok-kt">int</span><span class="tok-w"> </span><span class="tok-n">r</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-p">{</span>
-<span class="tok-w">  </span><span class="tok-k">return</span><span class="tok-w"> </span><span class="tok-p">(</span><span class="tok-n">l</span><span class="tok-w"> </span><span class="tok-o">*</span><span class="tok-w"> </span><span class="tok-n">r</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">%</span><span class="tok-w"> </span><span class="tok-n">P</span><span class="tok-p">;</span>
-<span class="tok-p">}</span></code></pre>
+<pre class="pygments highlight" style="background: #000000; color: #dddddd"><code data-lang="c"><span></span><span style="color: #ee82ee">unsigned</span><span style="color: #dddddd"> </span><span style="color: #ee82ee">int</span><span style="color: #dddddd"> </span><span style="color: #ffff00">bool_and</span><span style="color: #dddddd">(</span><span style="color: #ee82ee">unsigned</span><span style="color: #dddddd"> </span><span style="color: #ee82ee">int</span><span style="color: #dddddd"> l, </span><span style="color: #ee82ee">unsigned</span><span style="color: #dddddd"> </span><span style="color: #ee82ee">int</span><span style="color: #dddddd"> r) {</span>
+<span style="color: #dddddd">  </span><span style="color: #ff0000">return</span><span style="color: #dddddd"> (l * r) % P;</span>
+<span style="color: #dddddd">}</span></code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -1187,17 +1187,17 @@ For <code>or</code> we subtract once, and <code>xor</code> we subtract twice.</p
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="c"><span></span><span class="tok-k">const</span><span class="tok-w"> </span><span class="tok-kt">unsigned</span><span class="tok-w"> </span><span class="tok-kt">int</span><span class="tok-w"> </span><span class="tok-n">NEG1</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-p">(</span><span class="tok-n">P</span><span class="tok-w"> </span><span class="tok-o">-</span><span class="tok-w"> </span><span class="tok-mi">1</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">%</span><span class="tok-w"> </span><span class="tok-n">P</span><span class="tok-p">;</span>
+<pre class="pygments highlight" style="background: #000000; color: #dddddd"><code data-lang="c"><span></span><span style="color: #ff0000">const</span><span style="color: #dddddd"> </span><span style="color: #ee82ee">unsigned</span><span style="color: #dddddd"> </span><span style="color: #ee82ee">int</span><span style="color: #dddddd"> NEG1 = (P - 1) % P;</span>
 
-<span class="tok-kt">unsigned</span><span class="tok-w"> </span><span class="tok-kt">int</span><span class="tok-w"> </span><span class="tok-nf">bool_or</span><span class="tok-p">(</span><span class="tok-kt">unsigned</span><span class="tok-w"> </span><span class="tok-kt">int</span><span class="tok-w"> </span><span class="tok-n">l</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-kt">unsigned</span><span class="tok-w"> </span><span class="tok-kt">int</span><span class="tok-w"> </span><span class="tok-n">r</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-p">{</span>
-<span class="tok-w">  </span><span class="tok-k">return</span><span class="tok-w"> </span><span class="tok-p">((</span><span class="tok-n">l</span><span class="tok-w"> </span><span class="tok-o">+</span><span class="tok-w"> </span><span class="tok-n">r</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">%</span><span class="tok-w"> </span><span class="tok-n">P</span><span class="tok-w"> </span><span class="tok-o">+</span><span class="tok-w"> </span><span class="tok-p">(</span><span class="tok-n">NEG1</span><span class="tok-w"> </span><span class="tok-o">*</span><span class="tok-w"> </span><span class="tok-p">(</span><span class="tok-n">l</span><span class="tok-w"> </span><span class="tok-o">*</span><span class="tok-w"> </span><span class="tok-n">r</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">%</span><span class="tok-w"> </span><span class="tok-n">P</span><span class="tok-p">))</span><span class="tok-w"> </span><span class="tok-o">%</span><span class="tok-w"> </span><span class="tok-n">P</span><span class="tok-p">;</span>
-<span class="tok-p">}</span>
+<span style="color: #ee82ee">unsigned</span><span style="color: #dddddd"> </span><span style="color: #ee82ee">int</span><span style="color: #dddddd"> </span><span style="color: #ffff00">bool_or</span><span style="color: #dddddd">(</span><span style="color: #ee82ee">unsigned</span><span style="color: #dddddd"> </span><span style="color: #ee82ee">int</span><span style="color: #dddddd"> l, </span><span style="color: #ee82ee">unsigned</span><span style="color: #dddddd"> </span><span style="color: #ee82ee">int</span><span style="color: #dddddd"> r) {</span>
+<span style="color: #dddddd">  </span><span style="color: #ff0000">return</span><span style="color: #dddddd"> ((l + r) % P + (NEG1 * (l * r) % P)) % P;</span>
+<span style="color: #dddddd">}</span>
 
-<span class="tok-k">const</span><span class="tok-w"> </span><span class="tok-kt">unsigned</span><span class="tok-w"> </span><span class="tok-kt">int</span><span class="tok-w"> </span><span class="tok-n">NEG2</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-p">(</span><span class="tok-n">NEG1</span><span class="tok-w"> </span><span class="tok-o">*</span><span class="tok-w"> </span><span class="tok-mi">2</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">%</span><span class="tok-w"> </span><span class="tok-n">P</span><span class="tok-p">;</span>
+<span style="color: #ff0000">const</span><span style="color: #dddddd"> </span><span style="color: #ee82ee">unsigned</span><span style="color: #dddddd"> </span><span style="color: #ee82ee">int</span><span style="color: #dddddd"> NEG2 = (NEG1 * 2) % P;</span>
 
-<span class="tok-kt">unsigned</span><span class="tok-w"> </span><span class="tok-kt">int</span><span class="tok-w"> </span><span class="tok-nf">bool_xor</span><span class="tok-p">(</span><span class="tok-kt">unsigned</span><span class="tok-w"> </span><span class="tok-kt">int</span><span class="tok-w"> </span><span class="tok-n">l</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-kt">unsigned</span><span class="tok-w"> </span><span class="tok-kt">int</span><span class="tok-w"> </span><span class="tok-n">r</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-p">{</span>
-<span class="tok-w">  </span><span class="tok-k">return</span><span class="tok-w"> </span><span class="tok-p">((</span><span class="tok-n">l</span><span class="tok-w"> </span><span class="tok-o">+</span><span class="tok-w"> </span><span class="tok-n">r</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">%</span><span class="tok-w"> </span><span class="tok-n">P</span><span class="tok-w"> </span><span class="tok-o">+</span><span class="tok-w"> </span><span class="tok-p">(</span><span class="tok-n">NEG2</span><span class="tok-w"> </span><span class="tok-o">*</span><span class="tok-w"> </span><span class="tok-p">(</span><span class="tok-n">l</span><span class="tok-w"> </span><span class="tok-o">*</span><span class="tok-w"> </span><span class="tok-n">r</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">%</span><span class="tok-w"> </span><span class="tok-n">P</span><span class="tok-p">))</span><span class="tok-w"> </span><span class="tok-o">%</span><span class="tok-w"> </span><span class="tok-n">P</span><span class="tok-p">;</span>
-<span class="tok-p">}</span></code></pre>
+<span style="color: #ee82ee">unsigned</span><span style="color: #dddddd"> </span><span style="color: #ee82ee">int</span><span style="color: #dddddd"> </span><span style="color: #ffff00">bool_xor</span><span style="color: #dddddd">(</span><span style="color: #ee82ee">unsigned</span><span style="color: #dddddd"> </span><span style="color: #ee82ee">int</span><span style="color: #dddddd"> l, </span><span style="color: #ee82ee">unsigned</span><span style="color: #dddddd"> </span><span style="color: #ee82ee">int</span><span style="color: #dddddd"> r) {</span>
+<span style="color: #dddddd">  </span><span style="color: #ff0000">return</span><span style="color: #dddddd"> ((l + r) % P + (NEG2 * (l * r) % P)) % P;</span>
+<span style="color: #dddddd">}</span></code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -1251,9 +1251,9 @@ But a colleague showed me a trick where you multiply by <code>-1</code> and then
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="c"><span></span><span class="tok-kt">unsigned</span><span class="tok-w"> </span><span class="tok-kt">int</span><span class="tok-w"> </span><span class="tok-nf">bool_not</span><span class="tok-p">(</span><span class="tok-kt">unsigned</span><span class="tok-w"> </span><span class="tok-kt">int</span><span class="tok-w"> </span><span class="tok-n">v</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-p">{</span>
-<span class="tok-w">  </span><span class="tok-k">return</span><span class="tok-w"> </span><span class="tok-p">((</span><span class="tok-n">v</span><span class="tok-w"> </span><span class="tok-o">*</span><span class="tok-w"> </span><span class="tok-n">NEG1</span><span class="tok-w"> </span><span class="tok-o">%</span><span class="tok-w"> </span><span class="tok-n">P</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">+</span><span class="tok-w"> </span><span class="tok-mi">1</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">%</span><span class="tok-w"> </span><span class="tok-n">P</span><span class="tok-p">;</span>
-<span class="tok-p">}</span></code></pre>
+<pre class="pygments highlight" style="background: #000000; color: #dddddd"><code data-lang="c"><span></span><span style="color: #ee82ee">unsigned</span><span style="color: #dddddd"> </span><span style="color: #ee82ee">int</span><span style="color: #dddddd"> </span><span style="color: #ffff00">bool_not</span><span style="color: #dddddd">(</span><span style="color: #ee82ee">unsigned</span><span style="color: #dddddd"> </span><span style="color: #ee82ee">int</span><span style="color: #dddddd"> v) {</span>
+<span style="color: #dddddd">  </span><span style="color: #ff0000">return</span><span style="color: #dddddd"> ((v * NEG1 % P) + 1) % P;</span>
+<span style="color: #dddddd">}</span></code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -1272,15 +1272,15 @@ Then the prover can insert the bits as witness values into a circuit.</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="c"><span></span><span class="tok-kt">unsigned</span><span class="tok-w"> </span><span class="tok-kt">int</span><span class="tok-w"> </span><span class="tok-n">value</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-cm">/* value to be decomposed */</span><span class="tok-p">;</span>
+<pre class="pygments highlight" style="background: #000000; color: #dddddd"><code data-lang="c"><span></span><span style="color: #ee82ee">unsigned</span><span style="color: #dddddd"> </span><span style="color: #ee82ee">int</span><span style="color: #dddddd"> value = </span><span style="color: #00ff00">/* value to be decomposed */</span><span style="color: #dddddd">;</span>
 
-<span class="tok-kt">unsigned</span><span class="tok-w"> </span><span class="tok-kt">int</span><span class="tok-w"> </span><span class="tok-n">bits</span><span class="tok-p">[</span><span class="tok-n">P_WIDTH</span><span class="tok-p">];</span>
+<span style="color: #ee82ee">unsigned</span><span style="color: #dddddd"> </span><span style="color: #ee82ee">int</span><span style="color: #dddddd"> bits[P_WIDTH];</span>
 
-<span class="tok-kt">unsigned</span><span class="tok-w"> </span><span class="tok-kt">int</span><span class="tok-w"> </span><span class="tok-n">val_cpy</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">value</span><span class="tok-p">;</span>
-<span class="tok-k">for</span><span class="tok-p">(</span><span class="tok-kt">size_t</span><span class="tok-w"> </span><span class="tok-n">i</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-mi">1</span><span class="tok-p">;</span><span class="tok-w"> </span><span class="tok-n">i</span><span class="tok-w"> </span><span class="tok-o">&lt;=</span><span class="tok-w"> </span><span class="tok-n">P_WIDTH</span><span class="tok-p">;</span><span class="tok-w"> </span><span class="tok-n">i</span><span class="tok-o">++</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-p">{</span>
-<span class="tok-w">  </span><span class="tok-n">bits</span><span class="tok-p">[</span><span class="tok-n">P_WIDTH</span><span class="tok-w"> </span><span class="tok-o">-</span><span class="tok-w"> </span><span class="tok-n">i</span><span class="tok-p">]</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">val_cpy</span><span class="tok-w"> </span><span class="tok-o">&amp;</span><span class="tok-w"> </span><span class="tok-mi">1</span><span class="tok-p">;</span>
-<span class="tok-w">  </span><span class="tok-n">val_cpy</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">val_cpy</span><span class="tok-w"> </span><span class="tok-o">&gt;&gt;</span><span class="tok-w"> </span><span class="tok-mi">1</span><span class="tok-p">;</span>
-<span class="tok-p">}</span></code></pre>
+<span style="color: #ee82ee">unsigned</span><span style="color: #dddddd"> </span><span style="color: #ee82ee">int</span><span style="color: #dddddd"> val_cpy = value;</span>
+<span style="color: #ff0000">for</span><span style="color: #dddddd">(</span><span style="color: #ee82ee">size_t</span><span style="color: #dddddd"> i = 1; i &lt;= P_WIDTH; i++) {</span>
+<span style="color: #dddddd">  bits[P_WIDTH - i] = val_cpy &amp; 1;</span>
+<span style="color: #dddddd">  val_cpy = val_cpy &gt;&gt; 1;</span>
+<span style="color: #dddddd">}</span></code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -1304,16 +1304,16 @@ Then the prover can insert the bits as witness values into a circuit.</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="c"><span></span><span class="tok-kt">unsigned</span><span class="tok-w"> </span><span class="tok-kt">int</span><span class="tok-w"> </span><span class="tok-n">recomp</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">bits</span><span class="tok-p">[</span><span class="tok-mi">0</span><span class="tok-p">];</span>
-<span class="tok-n">assert_boolean</span><span class="tok-p">(</span><span class="tok-n">bits</span><span class="tok-p">[</span><span class="tok-mi">0</span><span class="tok-p">]);</span>
+<pre class="pygments highlight" style="background: #000000; color: #dddddd"><code data-lang="c"><span></span><span style="color: #ee82ee">unsigned</span><span style="color: #dddddd"> </span><span style="color: #ee82ee">int</span><span style="color: #dddddd"> recomp = bits[0];</span>
+<span style="color: #dddddd">assert_boolean(bits[0]);</span>
 
-<span class="tok-k">for</span><span class="tok-p">(</span><span class="tok-kt">size_t</span><span class="tok-w"> </span><span class="tok-n">i</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-mi">1</span><span class="tok-p">;</span><span class="tok-w"> </span><span class="tok-n">i</span><span class="tok-w"> </span><span class="tok-o">&lt;</span><span class="tok-w"> </span><span class="tok-n">P_WIDTH</span><span class="tok-p">;</span><span class="tok-w"> </span><span class="tok-n">i</span><span class="tok-o">++</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-p">{</span>
-<span class="tok-w">  </span><span class="tok-n">assert_boolean</span><span class="tok-p">(</span><span class="tok-n">bits</span><span class="tok-p">[</span><span class="tok-n">i</span><span class="tok-p">]);</span>
+<span style="color: #ff0000">for</span><span style="color: #dddddd">(</span><span style="color: #ee82ee">size_t</span><span style="color: #dddddd"> i = 1; i &lt; P_WIDTH; i++) {</span>
+<span style="color: #dddddd">  assert_boolean(bits[i]);</span>
 
-<span class="tok-w">  </span><span class="tok-n">recomp</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-p">((</span><span class="tok-n">recomp</span><span class="tok-w"> </span><span class="tok-o">*</span><span class="tok-w"> </span><span class="tok-mi">2</span><span class="tok-w"> </span><span class="tok-o">%</span><span class="tok-w"> </span><span class="tok-n">P</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">+</span><span class="tok-w"> </span><span class="tok-n">bits</span><span class="tok-p">[</span><span class="tok-n">i</span><span class="tok-p">])</span><span class="tok-w"> </span><span class="tok-o">%</span><span class="tok-w"> </span><span class="tok-n">P</span><span class="tok-p">;</span>
-<span class="tok-p">}</span>
+<span style="color: #dddddd">  recomp = ((recomp * 2 % P) + bits[i]) % P;</span>
+<span style="color: #dddddd">}</span>
 
-<span class="tok-n">assert</span><span class="tok-p">(</span><span class="tok-mi">0</span><span class="tok-w"> </span><span class="tok-o">==</span><span class="tok-w"> </span><span class="tok-p">(</span><span class="tok-n">value</span><span class="tok-w"> </span><span class="tok-o">+</span><span class="tok-w"> </span><span class="tok-p">(</span><span class="tok-n">recomp</span><span class="tok-w"> </span><span class="tok-o">*</span><span class="tok-w"> </span><span class="tok-n">NEG1</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">%</span><span class="tok-w"> </span><span class="tok-n">P</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">%</span><span class="tok-w"> </span><span class="tok-n">P</span><span class="tok-p">);</span></code></pre>
+<span style="color: #dddddd">assert(0 == (value + (recomp * NEG1) % P) % P);</span></code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -1323,8 +1323,8 @@ The next section will show the actual implementation of a less than circuit.</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="c"><span></span><span class="tok-kt">unsigned</span><span class="tok-w"> </span><span class="tok-kt">int</span><span class="tok-w"> </span><span class="tok-n">prime_bits</span><span class="tok-p">[</span><span class="tok-n">P_WIDTH</span><span class="tok-p">]</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-cm">/* verifier already knows this */</span><span class="tok-p">;</span>
-<span class="tok-n">assert</span><span class="tok-p">(</span><span class="tok-mi">0</span><span class="tok-w"> </span><span class="tok-o">==</span><span class="tok-w"> </span><span class="tok-n">less_than_bits</span><span class="tok-p">(</span><span class="tok-n">prime_bits</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">bits</span><span class="tok-p">));</span></code></pre>
+<pre class="pygments highlight" style="background: #000000; color: #dddddd"><code data-lang="c"><span></span><span style="color: #ee82ee">unsigned</span><span style="color: #dddddd"> </span><span style="color: #ee82ee">int</span><span style="color: #dddddd"> prime_bits[P_WIDTH] = </span><span style="color: #00ff00">/* verifier already knows this */</span><span style="color: #dddddd">;</span>
+<span style="color: #dddddd">assert(0 == less_than_bits(prime_bits, bits));</span></code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -1332,8 +1332,8 @@ The next section will show the actual implementation of a less than circuit.</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="c"><span></span><span class="tok-n">val_cpy</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">value</span><span class="tok-p">;</span>
-<span class="tok-k">if</span><span class="tok-p">(</span><span class="tok-n">val_cpy</span><span class="tok-w"> </span><span class="tok-o">&lt;</span><span class="tok-w"> </span><span class="tok-p">(</span><span class="tok-mi">1</span><span class="tok-w"> </span><span class="tok-o">&lt;&lt;</span><span class="tok-w"> </span><span class="tok-n">P_WIDTH</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">-</span><span class="tok-w"> </span><span class="tok-mi">1</span><span class="tok-w"> </span><span class="tok-o">-</span><span class="tok-w"> </span><span class="tok-n">P</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"> </span><span class="tok-n">val_cpy</span><span class="tok-w"> </span><span class="tok-o">+=</span><span class="tok-w"> </span><span class="tok-n">P</span><span class="tok-p">;</span><span class="tok-w"> </span><span class="tok-p">}</span></code></pre>
+<pre class="pygments highlight" style="background: #000000; color: #dddddd"><code data-lang="c"><span></span><span style="color: #dddddd">val_cpy = value;</span>
+<span style="color: #ff0000">if</span><span style="color: #dddddd">(val_cpy &lt; (1 &lt;&lt; P_WIDTH) - 1 - P) { val_cpy += P; }</span></code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -1481,22 +1481,22 @@ Again, when combining prior comparisons we can use addition in place of an <code
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="c"><span></span><span class="tok-kt">unsigned</span><span class="tok-w"> </span><span class="tok-kt">int</span><span class="tok-w"> </span><span class="tok-nf">bits_less_than</span><span class="tok-p">(</span>
-<span class="tok-w">    </span><span class="tok-k">const</span><span class="tok-w"> </span><span class="tok-kt">unsigned</span><span class="tok-w"> </span><span class="tok-kt">int</span><span class="tok-w"> </span><span class="tok-n">l_bits</span><span class="tok-p">[</span><span class="tok-n">P_WIDTH</span><span class="tok-p">],</span><span class="tok-w"> </span><span class="tok-k">const</span><span class="tok-w"> </span><span class="tok-kt">unsigned</span><span class="tok-w"> </span><span class="tok-kt">int</span><span class="tok-w"> </span><span class="tok-n">r_bits</span><span class="tok-p">[</span><span class="tok-n">P_WIDTH</span><span class="tok-p">])</span>
-<span class="tok-p">{</span>
-<span class="tok-w">  </span><span class="tok-kt">unsigned</span><span class="tok-w"> </span><span class="tok-kt">int</span><span class="tok-w"> </span><span class="tok-n">lt</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">bool_and</span><span class="tok-p">(</span><span class="tok-n">bool_not</span><span class="tok-p">(</span><span class="tok-n">l_bits</span><span class="tok-p">[</span><span class="tok-mi">0</span><span class="tok-p">]),</span><span class="tok-w"> </span><span class="tok-n">r_bits</span><span class="tok-p">[</span><span class="tok-mi">0</span><span class="tok-p">]);</span>
-<span class="tok-w">  </span><span class="tok-kt">unsigned</span><span class="tok-w"> </span><span class="tok-kt">int</span><span class="tok-w"> </span><span class="tok-n">p</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">bool_not</span><span class="tok-p">(</span><span class="tok-n">bool_xor</span><span class="tok-p">(</span><span class="tok-n">l_bits</span><span class="tok-p">[</span><span class="tok-mi">0</span><span class="tok-p">],</span><span class="tok-w"> </span><span class="tok-n">r_bits</span><span class="tok-p">[</span><span class="tok-mi">0</span><span class="tok-p">]));</span>
+<pre class="pygments highlight" style="background: #000000; color: #dddddd"><code data-lang="c"><span></span><span style="color: #ee82ee">unsigned</span><span style="color: #dddddd"> </span><span style="color: #ee82ee">int</span><span style="color: #dddddd"> </span><span style="color: #ffff00">bits_less_than</span><span style="color: #dddddd">(</span>
+<span style="color: #dddddd">    </span><span style="color: #ff0000">const</span><span style="color: #dddddd"> </span><span style="color: #ee82ee">unsigned</span><span style="color: #dddddd"> </span><span style="color: #ee82ee">int</span><span style="color: #dddddd"> l_bits[P_WIDTH], </span><span style="color: #ff0000">const</span><span style="color: #dddddd"> </span><span style="color: #ee82ee">unsigned</span><span style="color: #dddddd"> </span><span style="color: #ee82ee">int</span><span style="color: #dddddd"> r_bits[P_WIDTH])</span>
+<span style="color: #dddddd">{</span>
+<span style="color: #dddddd">  </span><span style="color: #ee82ee">unsigned</span><span style="color: #dddddd"> </span><span style="color: #ee82ee">int</span><span style="color: #dddddd"> lt = bool_and(bool_not(l_bits[0]), r_bits[0]);</span>
+<span style="color: #dddddd">  </span><span style="color: #ee82ee">unsigned</span><span style="color: #dddddd"> </span><span style="color: #ee82ee">int</span><span style="color: #dddddd"> p = bool_not(bool_xor(l_bits[0], r_bits[0]));</span>
 
-<span class="tok-w">  </span><span class="tok-k">for</span><span class="tok-p">(</span><span class="tok-kt">size_t</span><span class="tok-w"> </span><span class="tok-n">i</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-mi">1</span><span class="tok-p">;</span><span class="tok-w"> </span><span class="tok-n">i</span><span class="tok-w"> </span><span class="tok-o">&lt;</span><span class="tok-w"> </span><span class="tok-n">P_WIDTH</span><span class="tok-w"> </span><span class="tok-o">-</span><span class="tok-w"> </span><span class="tok-mi">1</span><span class="tok-p">;</span><span class="tok-w"> </span><span class="tok-n">i</span><span class="tok-o">++</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-p">{</span>
-<span class="tok-w">    </span><span class="tok-kt">unsigned</span><span class="tok-w"> </span><span class="tok-kt">int</span><span class="tok-w"> </span><span class="tok-n">tmp_lt</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">bool_and</span><span class="tok-p">(</span><span class="tok-n">bool_not</span><span class="tok-p">(</span><span class="tok-n">l_bits</span><span class="tok-p">[</span><span class="tok-n">i</span><span class="tok-p">]),</span><span class="tok-w"> </span><span class="tok-n">r_bits</span><span class="tok-p">[</span><span class="tok-n">i</span><span class="tok-p">]);</span>
-<span class="tok-w">    </span><span class="tok-n">lt</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-p">(</span><span class="tok-n">bool_and</span><span class="tok-p">(</span><span class="tok-n">p</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">tmp_lt</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">+</span><span class="tok-w"> </span><span class="tok-n">lt</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">%</span><span class="tok-w"> </span><span class="tok-n">P</span><span class="tok-p">;</span>
+<span style="color: #dddddd">  </span><span style="color: #ff0000">for</span><span style="color: #dddddd">(</span><span style="color: #ee82ee">size_t</span><span style="color: #dddddd"> i = 1; i &lt; P_WIDTH - 1; i++) {</span>
+<span style="color: #dddddd">    </span><span style="color: #ee82ee">unsigned</span><span style="color: #dddddd"> </span><span style="color: #ee82ee">int</span><span style="color: #dddddd"> tmp_lt = bool_and(bool_not(l_bits[i]), r_bits[i]);</span>
+<span style="color: #dddddd">    lt = (bool_and(p, tmp_lt) + lt) % P;</span>
 
-<span class="tok-w">    </span><span class="tok-n">p</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">bool_and</span><span class="tok-p">(</span><span class="tok-n">p</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">bool_not</span><span class="tok-p">(</span><span class="tok-n">bool_xor</span><span class="tok-p">(</span><span class="tok-n">l_bits</span><span class="tok-p">[</span><span class="tok-n">i</span><span class="tok-p">],</span><span class="tok-w"> </span><span class="tok-n">r_bits</span><span class="tok-p">[</span><span class="tok-n">i</span><span class="tok-p">])));</span>
-<span class="tok-w">  </span><span class="tok-p">}</span>
+<span style="color: #dddddd">    p = bool_and(p, bool_not(bool_xor(l_bits[i], r_bits[i])));</span>
+<span style="color: #dddddd">  }</span>
 
-<span class="tok-w">  </span><span class="tok-k">return</span><span class="tok-w"> </span><span class="tok-p">(</span><span class="tok-n">bool_and</span><span class="tok-p">(</span><span class="tok-n">bool_and</span><span class="tok-p">(</span>
-<span class="tok-w">          </span><span class="tok-n">bool_not</span><span class="tok-p">(</span><span class="tok-n">l_bits</span><span class="tok-p">[</span><span class="tok-n">P_WIDTH</span><span class="tok-w"> </span><span class="tok-o">-</span><span class="tok-w"> </span><span class="tok-mi">1</span><span class="tok-p">]),</span><span class="tok-w"> </span><span class="tok-n">r_bits</span><span class="tok-p">[</span><span class="tok-n">P_WIDTH</span><span class="tok-w"> </span><span class="tok-o">-</span><span class="tok-w"> </span><span class="tok-mi">1</span><span class="tok-p">]),</span><span class="tok-w"> </span><span class="tok-n">p</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">+</span><span class="tok-w"> </span><span class="tok-n">lt</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">%</span><span class="tok-w"> </span><span class="tok-n">P</span><span class="tok-p">;</span>
-<span class="tok-p">}</span></code></pre>
+<span style="color: #dddddd">  </span><span style="color: #ff0000">return</span><span style="color: #dddddd"> (bool_and(bool_and(</span>
+<span style="color: #dddddd">          bool_not(l_bits[P_WIDTH - 1]), r_bits[P_WIDTH - 1]), p) + lt) % P;</span>
+<span style="color: #dddddd">}</span></code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -1504,21 +1504,21 @@ Again, when combining prior comparisons we can use addition in place of an <code
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="c"><span></span><span class="tok-kt">unsigned</span><span class="tok-w"> </span><span class="tok-kt">int</span><span class="tok-w"> </span><span class="tok-nf">bits_less_than_equal</span><span class="tok-p">(</span>
-<span class="tok-w">    </span><span class="tok-kt">unsigned</span><span class="tok-w"> </span><span class="tok-kt">int</span><span class="tok-w"> </span><span class="tok-k">const</span><span class="tok-w"> </span><span class="tok-n">l_bits</span><span class="tok-p">[</span><span class="tok-n">P_WIDTH</span><span class="tok-p">],</span><span class="tok-w"> </span><span class="tok-kt">unsigned</span><span class="tok-w"> </span><span class="tok-kt">int</span><span class="tok-w"> </span><span class="tok-k">const</span><span class="tok-w"> </span><span class="tok-n">r_bits</span><span class="tok-p">[</span><span class="tok-n">P_WIDTH</span><span class="tok-p">])</span>
-<span class="tok-p">{</span>
-<span class="tok-w">  </span><span class="tok-kt">unsigned</span><span class="tok-w"> </span><span class="tok-kt">int</span><span class="tok-w"> </span><span class="tok-n">lt</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-cm">/* ... */</span><span class="tok-p">;</span>
-<span class="tok-w">  </span><span class="tok-kt">unsigned</span><span class="tok-w"> </span><span class="tok-kt">int</span><span class="tok-w"> </span><span class="tok-n">p</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-cm">/* ... */</span><span class="tok-p">;</span>
+<pre class="pygments highlight" style="background: #000000; color: #dddddd"><code data-lang="c"><span></span><span style="color: #ee82ee">unsigned</span><span style="color: #dddddd"> </span><span style="color: #ee82ee">int</span><span style="color: #dddddd"> </span><span style="color: #ffff00">bits_less_than_equal</span><span style="color: #dddddd">(</span>
+<span style="color: #dddddd">    </span><span style="color: #ee82ee">unsigned</span><span style="color: #dddddd"> </span><span style="color: #ee82ee">int</span><span style="color: #dddddd"> </span><span style="color: #ff0000">const</span><span style="color: #dddddd"> l_bits[P_WIDTH], </span><span style="color: #ee82ee">unsigned</span><span style="color: #dddddd"> </span><span style="color: #ee82ee">int</span><span style="color: #dddddd"> </span><span style="color: #ff0000">const</span><span style="color: #dddddd"> r_bits[P_WIDTH])</span>
+<span style="color: #dddddd">{</span>
+<span style="color: #dddddd">  </span><span style="color: #ee82ee">unsigned</span><span style="color: #dddddd"> </span><span style="color: #ee82ee">int</span><span style="color: #dddddd"> lt = </span><span style="color: #00ff00">/* ... */</span><span style="color: #dddddd">;</span>
+<span style="color: #dddddd">  </span><span style="color: #ee82ee">unsigned</span><span style="color: #dddddd"> </span><span style="color: #ee82ee">int</span><span style="color: #dddddd"> p = </span><span style="color: #00ff00">/* ... */</span><span style="color: #dddddd">;</span>
 
-<span class="tok-w">  </span><span class="tok-k">for</span><span class="tok-p">(</span><span class="tok-cm">/* ... */</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-p">{</span>
-<span class="tok-w">    </span><span class="tok-cm">/* ... */</span>
-<span class="tok-w">  </span><span class="tok-p">}</span>
+<span style="color: #dddddd">  </span><span style="color: #ff0000">for</span><span style="color: #dddddd">(</span><span style="color: #00ff00">/* ... */</span><span style="color: #dddddd">) {</span>
+<span style="color: #dddddd">    </span><span style="color: #00ff00">/* ... */</span>
+<span style="color: #dddddd">  }</span>
 
-<span class="tok-w">  </span><span class="tok-n">lt</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-p">(</span><span class="tok-n">bool_and</span><span class="tok-p">(</span><span class="tok-n">bool_and</span><span class="tok-p">(</span>
-<span class="tok-w">          </span><span class="tok-n">bool_not</span><span class="tok-p">(</span><span class="tok-n">l_bits</span><span class="tok-p">[</span><span class="tok-n">P_WIDTH</span><span class="tok-w"> </span><span class="tok-o">-</span><span class="tok-w"> </span><span class="tok-mi">1</span><span class="tok-p">]),</span><span class="tok-w"> </span><span class="tok-n">r_bits</span><span class="tok-p">[</span><span class="tok-n">P_WIDTH</span><span class="tok-w"> </span><span class="tok-o">-</span><span class="tok-w"> </span><span class="tok-mi">1</span><span class="tok-p">]),</span><span class="tok-w"> </span><span class="tok-n">p</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">+</span><span class="tok-w"> </span><span class="tok-n">lt</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">%</span><span class="tok-w"> </span><span class="tok-n">P</span><span class="tok-p">;</span>
-<span class="tok-w">  </span><span class="tok-k">return</span><span class="tok-w"> </span><span class="tok-p">(</span><span class="tok-n">bool_and</span><span class="tok-p">(</span><span class="tok-n">bool_not</span><span class="tok-p">(</span>
-<span class="tok-w">          </span><span class="tok-n">bool_xor</span><span class="tok-p">(</span><span class="tok-n">l_bits</span><span class="tok-p">[</span><span class="tok-n">P_WIDTH</span><span class="tok-w"> </span><span class="tok-o">-</span><span class="tok-w"> </span><span class="tok-mi">1</span><span class="tok-p">],</span><span class="tok-w"> </span><span class="tok-n">r_bits</span><span class="tok-p">[</span><span class="tok-n">P_WIDTH</span><span class="tok-w"> </span><span class="tok-o">-</span><span class="tok-w"> </span><span class="tok-mi">1</span><span class="tok-p">])),</span><span class="tok-w"> </span><span class="tok-n">p</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">+</span><span class="tok-w"> </span><span class="tok-n">lt</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">%</span><span class="tok-w"> </span><span class="tok-n">P</span><span class="tok-p">;</span>
-<span class="tok-p">}</span></code></pre>
+<span style="color: #dddddd">  lt = (bool_and(bool_and(</span>
+<span style="color: #dddddd">          bool_not(l_bits[P_WIDTH - 1]), r_bits[P_WIDTH - 1]), p) + lt) % P;</span>
+<span style="color: #dddddd">  </span><span style="color: #ff0000">return</span><span style="color: #dddddd"> (bool_and(bool_not(</span>
+<span style="color: #dddddd">          bool_xor(l_bits[P_WIDTH - 1], r_bits[P_WIDTH - 1])), p) + lt) % P;</span>
+<span style="color: #dddddd">}</span></code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -1549,27 +1549,27 @@ Then the prover must prove the following two things</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="c"><span></span><span class="tok-c1">// return quotient, return remainder by pointer</span>
-<span class="tok-kt">unsigned</span><span class="tok-w"> </span><span class="tok-kt">int</span><span class="tok-w"> </span><span class="tok-nf">int_division</span><span class="tok-p">(</span><span class="tok-kt">unsigned</span><span class="tok-w"> </span><span class="tok-kt">int</span><span class="tok-w"> </span><span class="tok-n">n</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-kt">unsigned</span><span class="tok-w"> </span><span class="tok-kt">int</span><span class="tok-w"> </span><span class="tok-n">d</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-kt">unsigned</span><span class="tok-w"> </span><span class="tok-kt">int</span><span class="tok-o">*</span><span class="tok-w"> </span><span class="tok-n">q</span><span class="tok-p">)</span>
-<span class="tok-p">{</span>
-<span class="tok-w">  </span><span class="tok-kt">unsigned</span><span class="tok-w"> </span><span class="tok-kt">int</span><span class="tok-w"> </span><span class="tok-n">q</span><span class="tok-p">;</span>
+<pre class="pygments highlight" style="background: #000000; color: #dddddd"><code data-lang="c"><span></span><span style="color: #00ff00">// return quotient, return remainder by pointer</span>
+<span style="color: #ee82ee">unsigned</span><span style="color: #dddddd"> </span><span style="color: #ee82ee">int</span><span style="color: #dddddd"> </span><span style="color: #ffff00">int_division</span><span style="color: #dddddd">(</span><span style="color: #ee82ee">unsigned</span><span style="color: #dddddd"> </span><span style="color: #ee82ee">int</span><span style="color: #dddddd"> n, </span><span style="color: #ee82ee">unsigned</span><span style="color: #dddddd"> </span><span style="color: #ee82ee">int</span><span style="color: #dddddd"> d, </span><span style="color: #ee82ee">unsigned</span><span style="color: #dddddd"> </span><span style="color: #ee82ee">int</span><span style="color: #dddddd">* q)</span>
+<span style="color: #dddddd">{</span>
+<span style="color: #dddddd">  </span><span style="color: #ee82ee">unsigned</span><span style="color: #dddddd"> </span><span style="color: #ee82ee">int</span><span style="color: #dddddd"> q;</span>
 
-<span class="tok-w">  </span><span class="tok-k">if</span><span class="tok-p">(</span><span class="tok-n">I_AM_PROVER</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-p">{</span>
-<span class="tok-w">    </span><span class="tok-n">q</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">n</span><span class="tok-w"> </span><span class="tok-o">/</span><span class="tok-w"> </span><span class="tok-n">d</span><span class="tok-p">;</span>
-<span class="tok-w">    </span><span class="tok-o">*</span><span class="tok-n">r</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">n</span><span class="tok-w"> </span><span class="tok-o">%</span><span class="tok-w"> </span><span class="tok-n">d</span><span class="tok-p">;</span>
-<span class="tok-w">  </span><span class="tok-p">}</span>
+<span style="color: #dddddd">  </span><span style="color: #ff0000">if</span><span style="color: #dddddd">(I_AM_PROVER) {</span>
+<span style="color: #dddddd">    q = n / d;</span>
+<span style="color: #dddddd">    *r = n % d;</span>
+<span style="color: #dddddd">  }</span>
 
-<span class="tok-w">  </span><span class="tok-n">assert</span><span class="tok-p">(</span><span class="tok-mi">0</span><span class="tok-w"> </span><span class="tok-o">==</span><span class="tok-w"> </span><span class="tok-p">((</span><span class="tok-n">n</span><span class="tok-w"> </span><span class="tok-o">*</span><span class="tok-w"> </span><span class="tok-n">NEG1</span><span class="tok-w"> </span><span class="tok-o">%</span><span class="tok-w"> </span><span class="tok-n">P</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">+</span><span class="tok-w"> </span><span class="tok-p">((</span><span class="tok-n">q</span><span class="tok-w"> </span><span class="tok-o">*</span><span class="tok-w"> </span><span class="tok-n">d</span><span class="tok-w"> </span><span class="tok-o">%</span><span class="tok-w"> </span><span class="tok-n">P</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">+</span><span class="tok-w"> </span><span class="tok-n">r</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">%</span><span class="tok-w"> </span><span class="tok-n">P</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">%</span><span class="tok-w"> </span><span class="tok-n">P</span><span class="tok-p">);</span>
+<span style="color: #dddddd">  assert(0 == ((n * NEG1 % P) + ((q * d % P) + r) % P) % P);</span>
 
-<span class="tok-w">  </span><span class="tok-kt">unsigned</span><span class="tok-w"> </span><span class="tok-kt">int</span><span class="tok-w"> </span><span class="tok-n">r_bits</span><span class="tok-p">[</span><span class="tok-n">P_WIDTH</span><span class="tok-p">];</span>
-<span class="tok-w">  </span><span class="tok-kt">unsigned</span><span class="tok-w"> </span><span class="tok-kt">int</span><span class="tok-w"> </span><span class="tok-n">d_bits</span><span class="tok-p">[</span><span class="tok-n">P_WIDTH</span><span class="tok-p">];</span>
-<span class="tok-w">  </span><span class="tok-n">bit_decompose</span><span class="tok-p">(</span><span class="tok-n">r_bits</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">r</span><span class="tok-p">);</span>
-<span class="tok-w">  </span><span class="tok-n">bit_decompose</span><span class="tok-p">(</span><span class="tok-n">d_bits</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">d</span><span class="tok-p">);</span>
+<span style="color: #dddddd">  </span><span style="color: #ee82ee">unsigned</span><span style="color: #dddddd"> </span><span style="color: #ee82ee">int</span><span style="color: #dddddd"> r_bits[P_WIDTH];</span>
+<span style="color: #dddddd">  </span><span style="color: #ee82ee">unsigned</span><span style="color: #dddddd"> </span><span style="color: #ee82ee">int</span><span style="color: #dddddd"> d_bits[P_WIDTH];</span>
+<span style="color: #dddddd">  bit_decompose(r_bits, r);</span>
+<span style="color: #dddddd">  bit_decompose(d_bits, d);</span>
 
-<span class="tok-w">  </span><span class="tok-n">assert</span><span class="tok-p">(</span><span class="tok-mi">0</span><span class="tok-w"> </span><span class="tok-o">==</span><span class="tok-w"> </span><span class="tok-n">bits_less_than_equal</span><span class="tok-p">(</span><span class="tok-n">d_bits</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">r_bits</span><span class="tok-p">));</span>
+<span style="color: #dddddd">  assert(0 == bits_less_than_equal(d_bits, r_bits));</span>
 
-<span class="tok-w">  </span><span class="tok-k">return</span><span class="tok-w"> </span><span class="tok-n">q</span><span class="tok-p">;</span>
-<span class="tok-p">}</span></code></pre>
+<span style="color: #dddddd">  </span><span style="color: #ff0000">return</span><span style="color: #dddddd"> q;</span>
+<span style="color: #dddddd">}</span></code></pre>
 </div>
 </div>
 </div>
